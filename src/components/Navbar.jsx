@@ -313,8 +313,7 @@ const Navbar = () => {
   ...(user ?
   [
   { to: '/feed', icon: Layout, label: 'Feed' },
-  { to: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
-  { to: '/club', icon: Users, label: 'Clubs' }] :
+  { to: '/leaderboard', icon: Trophy, label: 'Leaderboard' }] :
 
   []),
   ...(localStorage.getItem('adminToken') ?

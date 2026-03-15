@@ -8,7 +8,6 @@ import FeedPage from './pages/FeedPage';
 import AdminPage from './pages/AdminPage';
 import AuthPage from './pages/AuthPage';
 import CampaignsPage from './pages/CampaignsPage';
-import ClubPage from './pages/ClubPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import BannedPage from './pages/BannedPage';
 import TermsPage from './pages/TermsPage';
@@ -85,7 +84,6 @@ function App() {
                     <Route path="/feed" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
                     <Route path="/campaigns" element={<ProtectedRoute><CampaignsPage /></ProtectedRoute>} />
                     <Route path="/leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
-                    <Route path="/club" element={<ProtectedRoute><ClubPage /></ProtectedRoute>} />
                     <Route path="/admin" element={<AdminPage />} />
                     <Route path="/my-complaints" element={<ProtectedRoute><FeedPage myOwn /></ProtectedRoute>} />
                   </Routes>

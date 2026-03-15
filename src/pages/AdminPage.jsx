@@ -30,10 +30,6 @@ const AdminPage = () => {
   const [showBanModal, setShowBanModal] = useState(null);
   const [banDuration, setBanDuration] = useState(7);
   const [banReasonText, setBanReasonText] = useState('');
-  const [allClubs, setAllClubs] = useState([]);
-  const [clubSearch, setClubSearch] = useState('');
-
-
   const [suggestions, setSuggestions] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -63,7 +59,6 @@ const AdminPage = () => {
       viewLogs: false,
       manageAdmins: false,
       manageUsers: false,
-      manageClubs: false,
       broadcastNotification: false
     },
     organizerDetails: {
@@ -131,7 +126,6 @@ const AdminPage = () => {
       fetchCampaigns();
       if (data.username === 'sohailk2064') {
         fetchAdmins();
-        fetchAllClubs();
       }
       if (data.permissions?.viewLogs || data.username === 'sohailk2064') fetchLogs();
 
@@ -164,7 +158,6 @@ const AdminPage = () => {
       if (activeTab === 'Campaigns') fetchCampaigns();
       if (activeTab === 'Userperms' && isSuperAdmin) fetchAdmins();
       if (activeTab === 'Users' && isSuperAdmin) fetchPlatformUsers();
-      if (activeTab === 'Clubs' && isSuperAdmin) fetchAllClubs();
       if (activeTab === 'Notifications' && isSuperAdmin) fetchBroadcastHistory();
     }
   }, [activeTab]);
@@ -238,26 +231,6 @@ const AdminPage = () => {
     } catch (err) {handleAdminRequestError(err);}
   };
 
-  const fetchAllClubs = async () => {
-    try {
-      const r = await axios.get(`${API_URL}/api/admin/all-clubs`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
-      });
-      setAllClubs(r.data);
-    } catch (err) {
-      const handled = handleAdminRequestError(err);
-      if (handled) return;
-      try {
-
-        const fallback = await axios.get(`${API_URL}/api/clubs`);
-        setAllClubs(Array.isArray(fallback.data) ? fallback.data : []);
-        toast('Loaded clubs with limited admin scope.', { icon: 'ℹ️' });
-      } catch {
-        toast.error('Failed to load clubs.');
-      }
-    }
-  };
-
   const sendBroadcast = async () => {
     if (!broadcastTitle.trim() || !broadcastMessage.trim()) {toast.error('Title and message are required.');return;}
     setBroadcasting(true);
@@ -292,28 +265,6 @@ const AdminPage = () => {
       toast.success('Broadcast deleted');
       fetchBroadcastHistory();
     } catch {toast.error('Failed to delete broadcast');}
-  };
-
-  const deleteClub = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this club? This cannot be undone.')) return;
-    try {
-      await axios.delete(`${API_URL}/api/admin/clubs/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
-      });
-      toast.success('Club deleted');
-      fetchAllClubs();
-    } catch {toast.error('Failed to delete club');}
-  };
-
-  const kickClubMember = async (clubId, userId) => {
-    if (!window.confirm('Kick this member from the club?')) return;
-    try {
-      await axios.delete(`${API_URL}/api/admin/clubs/${clubId}/members/${userId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
-      });
-      toast.success('Member kicked');
-      fetchAllClubs();
-    } catch (err) {toast.error(err.response?.data?.message || 'Failed to kick member');}
   };
 
   const login = async (e) => {
@@ -491,7 +442,7 @@ const AdminPage = () => {
                 <Lock size={16} style={{ position: 'absolute', left: 12, color: 'var(--text-tertiary)', pointerEvents: 'none' }} />
                 <input
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="????????????????????????"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -581,7 +532,6 @@ const AdminPage = () => {
           { id: 'Home', icon: Activity, label: 'Issues', hidden: !adminData?.permissions?.viewComplaints && !isSuperAdmin },
           { id: 'Campaigns', icon: Megaphone, label: 'Campaigns', hidden: !adminData?.permissions?.addCampaigns && !adminData?.permissions?.deleteCampaign && !isSuperAdmin },
           { id: 'Users', icon: Users, label: 'Platform Users', hidden: !adminData?.permissions?.manageUsers && !isSuperAdmin },
-          { id: 'Clubs', icon: Users, label: 'Club Manager', hidden: !adminData?.permissions?.manageClubs && !isSuperAdmin },
           { id: 'Notifications', icon: Bell, label: 'Notifications', hidden: !adminData?.permissions?.broadcastNotification && !isSuperAdmin },
           { id: 'Userperms', icon: ShieldCheck, label: 'Admins', hidden: !adminData?.permissions?.manageAdmins && !isSuperAdmin },
           { id: 'Logs', icon: FileText, label: 'Logs', hidden: !adminData?.permissions?.viewLogs && !isSuperAdmin }].
@@ -873,7 +823,7 @@ const AdminPage = () => {
                         })()}
 
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginLeft: 'auto' }}>
-                          Ward {s.wada} • {s.city}
+                          Ward {s.wada} ??? {s.city}
                         </span>
                       </div>
                       <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', margin: '0 0 8px 0' }}>
@@ -1450,7 +1400,7 @@ const AdminPage = () => {
                           <td style={{ padding: '14px 20px' }}>
                             <div style={{ fontSize: '0.85rem', color: 'var(--text)', fontWeight: 500 }}>{u.email}</div>
                             <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: 4 }}>
-                                IP: {u.ipAddress || 'Hidden'} • {
+                                IP: {u.ipAddress || 'Hidden'} ??? {
                           u.deviceFootprint?.platform === 'Win32' ? 'Windows' :
                           u.deviceFootprint?.platform === 'MacIntel' ? 'MacOS' :
                           u.deviceFootprint?.platform || 'Unknown'
@@ -1480,72 +1430,8 @@ const AdminPage = () => {
                 </div>
               </div>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: 12, textAlign: 'center' }}>
-                💡 Tip: Right-click on a user to perform moderator actions.
+                ???? Tip: Right-click on a user to perform moderator actions.
               </p>
-            </motion.div>
-          }
-
-          {activeTab === 'Clubs' && isSuperAdmin &&
-          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}>
-              <header style={{ marginBottom: isMobileView ? 16 : 32 }}>
-                <h1 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text)', marginBottom: 8 }}>Clubs</h1>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Manage all clubs.</p>
-              </header>
-
-              <div style={{ marginBottom: 24 }}>
-                <input
-                className="input"
-                placeholder="Search clubs by name or location..."
-                value={clubSearch}
-                onChange={(e) => setClubSearch(e.target.value)}
-                style={{ maxWidth: 400 }} />
-              
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(min(${isMobileView ? 260 : 360}px, 100%), 1fr))`, gap: isMobileView ? 12 : 20 }}>
-                {allClubs.filter((c) => c.name.toLowerCase().includes(clubSearch.toLowerCase()) || c.wada.includes(clubSearch)).map((club) =>
-              <div key={club._id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', position: 'relative' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                      <div>
-                        <h3 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', fontWeight: 800 }}>{club.name}</h3>
-                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>{club.city}, Wada {club.wada}</p>
-                      </div>
-                      <button onClick={() => deleteClub(club._id)} style={{ padding: '8px', borderRadius: '8px', border: 'none', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', cursor: 'pointer' }} title="Delete Club">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-
-                    <div style={{ marginBottom: 16 }}>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 12px 0', lineClamp: 2, overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2 }}>
-                        {club.description}
-                      </p>
-                      <div style={{ display: 'flex', gap: 12, fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-tertiary)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Users size={12} /> {club.members.length} Members</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Activity size={12} /> Level {club.level}</div>
-                      </div>
-                    </div>
-
-                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 850, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 12 }}>Member Registry</div>
-                      <div style={{ display: 'grid', gap: 8, maxHeight: 200, overflowY: 'auto', paddingRight: 4 }}>
-                        {club.members.map((member) =>
-                    <div key={member.userId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface-3)', borderRadius: '8px' }}>
-                            <div>
-                              <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{member.username}</div>
-                              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: member.role === 'President' ? 'var(--primary-accent)' : 'var(--text-tertiary)', textTransform: 'uppercase' }}>{member.role}</div>
-                            </div>
-                            {member.role !== 'President' &&
-                      <button onClick={() => kickClubMember(club._id, member.userId)} style={{ border: 'none', background: 'transparent', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 4 }}>
-                                <XCircle size={14} />
-                              </button>
-                      }
-                          </div>
-                    )}
-                      </div>
-                    </div>
-                  </div>
-              )}
-              </div>
             </motion.div>
           }
 
@@ -1626,10 +1512,10 @@ const AdminPage = () => {
                     {broadcastHistory.map((b, i) =>
                 <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '16px 20px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                          <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text)', flex: 1, minWidth: 0 }}>📢 {b.title}</div>
+                          <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text)', flex: 1, minWidth: 0 }}>???? {b.title}</div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                             <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
-                              {new Date(b.timestamp).toLocaleDateString()} · {b.recipientCount} users
+                              {new Date(b.timestamp).toLocaleDateString()} ?? {b.recipientCount} users
                             </div>
                             <button
                         onClick={() => deleteBroadcast(b.title, b.message)}
@@ -1792,7 +1678,7 @@ const AdminPage = () => {
                       </div>
                       <div>
                         <label className="label">Access Password</label>
-                        <input className="input" type="password" placeholder="••••••••" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />
+                        <input className="input" type="password" placeholder="????????????????????????" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />
                       </div>
                     </div>
 
@@ -1811,7 +1697,7 @@ const AdminPage = () => {
 
                 <div style={{ background: 'var(--accent-subtle)', padding: 16, borderRadius: 10, border: '1px solid var(--accent-border)' }}>
                         <p style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 600, margin: 0 }}>
-                          ✨ Campaigner accounts are automatically granted permissions to launch initiatives, manage them, and view registrant data.
+                          ??? Campaigner accounts are automatically granted permissions to launch initiatives, manage them, and view registrant data.
                         </p>
                       </div>
                 }
@@ -1852,7 +1738,7 @@ const AdminPage = () => {
                   permissions: {
                     viewComplaints: false, approveComplaint: false, resolveComplaint: false, removeComplaint: false,
                     addCampaigns: true, deleteCampaign: true, viewLogs: false,
-                    manageAdmins: false, manageUsers: false, manageClubs: false, broadcastNotification: false
+                    manageAdmins: false, manageUsers: false, broadcastNotification: false
                   }
                 }));
                 setUserModalStep(2);
