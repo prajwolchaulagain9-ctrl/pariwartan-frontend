@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import MapComponent, { MARKER_TYPES } from '../components/MapComponent';
 import useGeoLocation from '../hooks/useGeoLocation';
 import { MapPin, X, Loader2, AlertTriangle, ImagePlus, Trash2 } from 'lucide-react';
@@ -9,13 +9,15 @@ import { API_URL } from '../config';
 import toast from 'react-hot-toast';
 
 const MapPage = () => {
+  const navigate = useNavigate();
+  const isLoggedIn = Boolean(localStorage.getItem('token'));
   const [suggestions, setSuggestions] = useState([]);
   const [pinMode, setPinMode] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [manualCenter, setManualCenter] = useState(null);
   const [tempCoords, setTempCoords] = useState(null);
   const [detectedArea, setDetectedArea] = useState('Detecting...');
-  const [form, setForm] = useState({ title: '', description: '', type: 'Suggestion', markerType: 'General' });
+  const [form, setForm] = useState({ title: '', description: '', tags: '', type: 'Suggestion', markerType: 'General' });
   const [submitting, setSubmitting] = useState(false);
   const [validating, setValidating] = useState(false);
   const [validationPassed, setValidationPassed] = useState(false);
@@ -68,6 +70,17 @@ const MapPage = () => {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
+  const normalizeTags = (value) => {
+    return String(value || '')
+    .split(/\s+/)
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .map((tag) => tag.startsWith('#') ? tag : `#${tag}`)
+    .map((tag) => tag.replace(/[^#a-zA-Z0-9_]/g, ''))
+    .filter((tag) => tag.length > 1)
+    .slice(0, 8);
+  };
+
   const handleStartPinning = () => {
     if (!localStorage.getItem('user')) {toast.error('Please sign in to submit a complaint.');return;}
     setPinMode(true);
@@ -95,7 +108,7 @@ const MapPage = () => {
     setShowModal(false);
     setPinMode(false);
     setTempCoords(null);
-    setForm({ title: '', description: '', type: 'Suggestion', markerType: 'General' });
+    setForm({ title: '', description: '', tags: '', type: 'Suggestion', markerType: 'General' });
     setImages([]);
     setPreviews([]);
     setValidationPassed(false);
@@ -232,8 +245,10 @@ const MapPage = () => {
       setSubmitting(true);
 
       const fd = new FormData();
+      const tags = normalizeTags(form.tags);
       fd.append('title', form.title);
       fd.append('description', form.description);
+      fd.append('tags', JSON.stringify(tags));
       fd.append('type', form.type);
       fd.append('markerType', form.markerType);
       fd.append('lat', tempCoords.lat);
@@ -246,7 +261,7 @@ const MapPage = () => {
       });
       toast.success('Complaint submitted — pending admin review.');
       setShowModal(false);setPinMode(false);
-      setForm({ title: '', description: '', type: 'Suggestion', markerType: 'General' });
+      setForm({ title: '', description: '', tags: '', type: 'Suggestion', markerType: 'General' });
       setImages([]);setPreviews([]);
       setValidationPassed(false);
       setValidationResults([]);
@@ -289,6 +304,17 @@ const MapPage = () => {
           position: 'relative',
           overflow: 'hidden'
         }}>
+        {location.pathname === '/' && !isLoggedIn &&
+        <div className="home-hero" style={{ position: 'absolute', zIndex: 1000, top: 16, left: 16, right: 16 }}>
+            <h1>Raise Your Voice, Build Better Neighborhoods</h1>
+            <p>Report local issues, support community-led action, and track real outcomes in one civic feed.</p>
+            <div className="hero-actions">
+              <button className="hero-btn-primary" onClick={handleStartPinning}>Sign Up</button>
+              <button className="hero-btn-secondary" onClick={() => navigate('/feed')}>Join the Mission</button>
+            </div>
+          </div>
+        }
+
         <MapComponent
           pygame={pinMode}
           onPinLocation={handleConfirmPin}
@@ -334,7 +360,7 @@ const MapPage = () => {
               background: 'var(--surface)', border: '1px solid var(--border)',
               borderRadius: 10, boxShadow: '0 4px 16px rgba(0,0,0,0.1)'
             }}>
-                <Loader2 size={13} className="spin" style={{ color: '#7c3aed' }} />
+                <Loader2 size={13} className="spin" style={{ color: '#E8212A' }} />
                 <span style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Locating...</span>
               </div>
             </motion.div>
@@ -357,7 +383,7 @@ const MapPage = () => {
             padding: isMobileView ? 0 : '11px 18px',
             borderRadius: isMobileView ? 11 : 12,
             border: 'none',
-            background: pinMode ? 'var(--text-tertiary)' : 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+            background: pinMode ? 'var(--text-tertiary)' : 'linear-gradient(135deg, #E8212A, #FF6B35)',
             color: 'white',
             fontWeight: 700,
             fontSize: isMobileView ? 0 : '0.84rem',
@@ -366,7 +392,7 @@ const MapPage = () => {
             alignItems: 'center',
             justifyContent: 'center',
             gap: isMobileView ? 0 : 8,
-            boxShadow: pinMode ? 'none' : isMobileView ? '0 4px 14px rgba(124,58,237,0.35)' : '0 4px 20px rgba(124,58,237,0.35)',
+            boxShadow: pinMode ? 'none' : isMobileView ? '0 4px 14px rgba(232,33,42,0.35)' : '0 4px 20px rgba(232,33,42,0.35)',
             opacity: pinMode ? 0.5 : 1,
             transition: 'all 0.2s ease',
             letterSpacing: isMobileView ? 0 : '0.01em'
@@ -428,10 +454,10 @@ const MapPage = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{
                   width: 40, height: 40, borderRadius: 10,
-                  background: 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(129,140,248,0.12))',
+                  background: 'linear-gradient(135deg, rgba(232,33,42,0.12), rgba(129,140,248,0.12))',
                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
-                    <selectedMarker.icon size={20} color="#7c3aed" strokeWidth={2.2} />
+                    <selectedMarker.icon size={20} color="#E8212A" strokeWidth={2.2} />
                   </div>
                   <div>
                     <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: 'var(--text)' }}>
@@ -550,6 +576,26 @@ const MapPage = () => {
                 
                   <p style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', margin: '4px 0 0', textAlign: 'right' }}>
                     {form.description.length}/500
+                  </p>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Tags
+                  </label>
+                  <input
+                  type="text"
+                  placeholder="#road #water #garbage"
+                  value={form.tags}
+                  onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
+                  style={{
+                    width: '100%', padding: '10px 12px', borderRadius: 10,
+                    border: '1.5px solid var(--border)', background: 'var(--bg)',
+                    color: 'var(--text)', fontSize: '0.88rem', fontFamily: 'inherit',
+                    outline: 'none', transition: 'all 0.2s ease', boxSizing: 'border-box'
+                  }} />
+                  <p style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', margin: '6px 0 0' }}>
+                    Add up to 8 hashtags separated by space.
                   </p>
                 </div>
 
@@ -676,14 +722,14 @@ const MapPage = () => {
                   flex: 1, padding: '10px 14px', borderRadius: 10,
                   border: 'none',
                   background: submitting || validating || !form.title || !form.description ?
-                  'rgba(124,58,237,0.3)' :
-                  'linear-gradient(135deg, #7c3aed, #a78bfa)',
+                  'rgba(232,33,42,0.3)' :
+                  'linear-gradient(135deg, #E8212A, #FF6B35)',
                   color: 'white', fontWeight: 600, fontSize: '0.88rem',
                   cursor: submitting || validating || !form.title || !form.description ? 'not-allowed' : 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                   boxShadow: submitting || validating || !form.title || !form.description ?
                   'none' :
-                  '0 2px 10px rgba(124,58,237,0.3)'
+                  '0 2px 10px rgba(232,33,42,0.3)'
                 }}>
                   {submitting || validating ?
                 <><Loader2 size={14} className="spin" /> {validating ? 'Comparing...' : 'Submitting...'}</> :
@@ -696,6 +742,21 @@ const MapPage = () => {
           </motion.div>
         }
       </AnimatePresence>
+
+      {location.pathname === '/' && isMobileView && !isLoggedIn &&
+      <div style={{
+        position: 'fixed',
+        left: 10,
+        right: 10,
+        bottom: 'calc(64px + env(safe-area-inset-bottom))',
+        zIndex: 1200,
+        display: 'flex',
+        gap: 8
+      }}>
+          <button className="hero-btn-primary" style={{ flex: 1 }} onClick={handleStartPinning}>Sign Up</button>
+          <button className="hero-btn-secondary" style={{ flex: 1 }} onClick={() => navigate('/feed')}>Join the Mission</button>
+        </div>
+      }
     </motion.div>);
 
 };

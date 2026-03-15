@@ -110,8 +110,8 @@ const LeaderboardPage = () => {
                   display: 'flex', alignItems: 'center', gap: 14,
                   padding: isMobileView ? '10px 12px' : '14px 18px', borderRadius: 12,
                   background: rankBg(u.rank),
-                  border: isMe ? '1.5px solid rgba(124,58,237,0.4)' : rankBorder(u.rank),
-                  boxShadow: isMe ? '0 0 0 3px rgba(124,58,237,0.08)' : u.rank <= 3 ? '0 2px 8px rgba(0,0,0,0.04)' : 'none',
+                  border: isMe ? '1.5px solid rgba(232,33,42,0.4)' : rankBorder(u.rank),
+                  boxShadow: isMe ? '0 0 0 3px rgba(232,33,42,0.08)' : u.rank <= 3 ? '0 2px 8px rgba(0,0,0,0.04)' : 'none',
                   transition: 'all 0.2s ease'
                 }}>
                 
@@ -123,7 +123,7 @@ const LeaderboardPage = () => {
                   {}
                   <div style={{
                   width: isMobileView ? 34 : 40, height: isMobileView ? 34 : 40, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
-                  background: pic ? 'none' : 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+                  background: pic ? 'none' : 'linear-gradient(135deg, #E8212A, #FF6B35)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   border: u.rank <= 3 ? '2px solid rgba(245,158,11,0.3)' : '2px solid var(--border)'
                 }}>
@@ -139,7 +139,7 @@ const LeaderboardPage = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{
                       fontSize: isMobileView ? '0.8rem' : '0.88rem', fontWeight: 700,
-                      color: isMe ? '#7c3aed' : 'var(--text)',
+                      color: isMe ? '#E8212A' : 'var(--text)',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
                     }}>
                         {u.username}{isMe ? ' (you)' : ''}

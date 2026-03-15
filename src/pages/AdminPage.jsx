@@ -1445,7 +1445,7 @@ const AdminPage = () => {
               {}
               <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 24, marginBottom: 32 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(129,140,248,0.12))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg, rgba(232,33,42,0.12), rgba(129,140,248,0.12))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Megaphone size={18} style={{ color: 'var(--primary-accent)' }} />
                   </div>
                   <div>
@@ -1487,11 +1487,11 @@ const AdminPage = () => {
                     disabled={broadcasting || !broadcastTitle.trim() || !broadcastMessage.trim()}
                     style={{
                       padding: '10px 24px', borderRadius: 10, border: 'none',
-                      background: broadcasting || !broadcastTitle.trim() || !broadcastMessage.trim() ? 'rgba(124,58,237,0.3)' : 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+                      background: broadcasting || !broadcastTitle.trim() || !broadcastMessage.trim() ? 'rgba(232,33,42,0.3)' : 'linear-gradient(135deg, #E8212A, #FF6B35)',
                       color: 'white', fontWeight: 700, fontSize: '0.88rem',
                       cursor: broadcasting || !broadcastTitle.trim() || !broadcastMessage.trim() ? 'not-allowed' : 'pointer',
                       display: 'flex', alignItems: 'center', gap: 8,
-                      boxShadow: broadcasting || !broadcastTitle.trim() || !broadcastMessage.trim() ? 'none' : '0 2px 10px rgba(124,58,237,0.3)'
+                      boxShadow: broadcasting || !broadcastTitle.trim() || !broadcastMessage.trim() ? 'none' : '0 2px 10px rgba(232,33,42,0.3)'
                     }}>
                       {broadcasting ? <><Loader2 size={14} className="spin" /> Sending...</> : <><Send size={14} /> Send to All Users</>}
                     </motion.button>

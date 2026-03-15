@@ -5,13 +5,13 @@ const sectionTitle = {
   fontWeight: 800,
   letterSpacing: '0.06em',
   textTransform: 'uppercase',
-  color: '#f3e8ff',
+  color: '#111111',
   margin: '20px 0 8px',
 };
 
 const text = {
   margin: 0,
-  color: '#ddd6fe',
+  color: '#666666',
   fontSize: '0.88rem',
   lineHeight: 1.65,
 };
@@ -21,7 +21,7 @@ const TermsPage = () => {
     <div
       style={{
         minHeight: '100svh',
-        background: 'linear-gradient(180deg, #2e1065 0%, #4c1d95 45%, #581c87 100%)',
+        background: '#ffffff',
         padding: '24px 14px',
       }}
     >
@@ -29,25 +29,25 @@ const TermsPage = () => {
         style={{
           maxWidth: 860,
           margin: '0 auto',
-          border: '2px solid #a78bfa',
+          border: '1px solid #ebebeb',
           borderRadius: 12,
-          background: 'rgba(30, 11, 64, 0.85)',
-          boxShadow: '0 10px 40px rgba(32, 12, 76, 0.45)',
+          background: '#ffffff',
+          boxShadow: '0 6px 24px rgba(0, 0, 0, 0.06)',
           overflow: 'hidden',
-          fontFamily: 'Courier New, Consolas, monospace',
+          fontFamily: 'DM Sans, Mukta, sans-serif',
         }}
       >
         <div
           style={{
             padding: '16px 18px',
-            borderBottom: '1px solid rgba(196, 181, 253, 0.35)',
-            background: 'linear-gradient(90deg, rgba(139, 92, 246, 0.45), rgba(168, 85, 247, 0.28))',
+            borderBottom: '1px solid #ebebeb',
+            background: '#fff7f7',
           }}
         >
-          <h1 style={{ margin: 0, color: '#faf5ff', fontSize: '1.1rem', fontWeight: 900, letterSpacing: '0.05em' }}>
+          <h1 style={{ margin: 0, color: '#111111', fontSize: '1.1rem', fontWeight: 900, letterSpacing: '0.05em' }}>
             PARIWARTAN TERMS AND SERVICES
           </h1>
-          <p style={{ margin: '6px 0 0', color: '#e9d5ff', fontSize: '0.8rem' }}>
+          <p style={{ margin: '6px 0 0', color: '#666666', fontSize: '0.8rem' }}>
             Last updated: March 14, 2026
           </p>
         </div>

@@ -69,7 +69,7 @@ const Countdown = ({ endDate }) => {
   if (!endDate) return null;
 
   const items = [
-  { label: 'Days', value: timeLeft.days, color: '#7c3aed' },
+  { label: 'Days', value: timeLeft.days, color: '#E8212A' },
   { label: 'Hours', value: timeLeft.hours, color: '#f59e0b' },
   { label: 'Mins', value: timeLeft.minutes, color: '#10b981' },
   { label: 'Secs', value: timeLeft.seconds, color: '#3b82f6' }];
@@ -373,7 +373,7 @@ const CampaignsPage = ({ embedded = false }) => {
             }
 
                     <div style={{ display: 'flex', gap: 10 }}>
-                      <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={() => setRegisterFor(campaign)} style={{ flex: 1, padding: '10px 14px', background: 'linear-gradient(135deg, #7c3aed, #a78bfa)', color: 'white', border: 'none', borderRadius: 10, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxShadow: '0 2px 8px rgba(124,58,237,0.3)' }}>
+                      <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={() => setRegisterFor(campaign)} style={{ flex: 1, padding: '10px 14px', background: 'linear-gradient(135deg, #E8212A, #FF6B35)', color: 'white', border: 'none', borderRadius: 10, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxShadow: '0 2px 8px rgba(232,33,42,0.3)' }}>
                         <CheckCircle2 size={14} /> Register
                       </motion.button>
                       <motion.button whileHover={{ scale: 1.04, color: 'white', background: 'var(--accent)' }} whileTap={{ scale: 0.96 }} onClick={() => setInfoFor(campaign)} style={{ padding: '10px 14px', background: 'var(--bg)', color: 'var(--text)', border: '1.5px solid var(--border)', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Campaign details">

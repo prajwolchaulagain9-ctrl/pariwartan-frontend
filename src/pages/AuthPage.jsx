@@ -40,7 +40,7 @@ const AuthPage = () => {
       canvas.height = 50;
       const txt = 'Pariwartan.Nepal.Secure.ID.123';
       ctx.textBaseline = "top";
-      ctx.font = "14px 'Arial'";
+      ctx.font = "14px 'Mukta'";
       ctx.textBaseline = "alphabetic";
       ctx.fillStyle = "#f60";
       ctx.fillRect(125, 1, 62, 20);

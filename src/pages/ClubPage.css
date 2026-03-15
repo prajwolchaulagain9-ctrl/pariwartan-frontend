@@ -95,7 +95,7 @@
 
 [data-theme="dark"] .main-content .badge-primary {
   background: rgba(var(--primary-rgb), 0.2);
-  color: #a78bfa; /* Vibrant Indigo-Indigo */
+  color: #FF6B35; /* Vibrant Indigo-Indigo */
 }
 
 [data-theme="dark"] .main-content .card {

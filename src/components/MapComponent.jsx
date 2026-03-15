@@ -301,7 +301,7 @@ const MapComponent = ({ onPinLocation, markers = [], pinMode = false, userLocati
               className="custom-map-popup"
               maxWidth="320px">
               
-              <div style={{ fontFamily: 'Inter, system-ui, sans-serif', minWidth: 240 }}>
+              <div style={{ fontFamily: 'DM Sans, Mukta, sans-serif', minWidth: 240 }}>
 
                 {}
                 {hasImages &&
@@ -346,8 +346,8 @@ const MapComponent = ({ onPinLocation, markers = [], pinMode = false, userLocati
                     <span style={{
                       fontSize: '0.62rem', fontWeight: 700, padding: '2px 7px', borderRadius: 5,
                       textTransform: 'uppercase', letterSpacing: '0.04em',
-                      background: popupInfo.status === 'Approved' || popupInfo.status === 'Progress' ? 'rgba(34,197,94,0.1)' : popupInfo.status === 'Resolved' ? 'rgba(124,58,237,0.1)' : 'rgba(107,114,128,0.1)',
-                      color: popupInfo.status === 'Approved' || popupInfo.status === 'Progress' ? '#16a34a' : popupInfo.status === 'Resolved' ? '#7c3aed' : '#6b7280'
+                      background: popupInfo.status === 'Approved' || popupInfo.status === 'Progress' ? 'rgba(34,197,94,0.1)' : popupInfo.status === 'Resolved' ? 'rgba(232,33,42,0.1)' : 'rgba(107,114,128,0.1)',
+                      color: popupInfo.status === 'Approved' || popupInfo.status === 'Progress' ? '#16a34a' : popupInfo.status === 'Resolved' ? '#E8212A' : '#6b7280'
                     }}>{popupInfo.status === 'Progress' ? 'Approved' : popupInfo.status}</span>
                     <div style={{ flex: 1 }} />
                     <button
@@ -394,7 +394,7 @@ const MapComponent = ({ onPinLocation, markers = [], pinMode = false, userLocati
 
                       <div style={{
                         width: 26, height: 26, borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+                        background: 'linear-gradient(135deg, #E8212A, #FF6B35)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '0.65rem', fontWeight: 800, color: 'white'
                       }}>{poster.username?.[0]?.toUpperCase() || '?'}</div>

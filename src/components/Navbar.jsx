@@ -17,6 +17,8 @@ import axios from 'axios';
 import { API_URL, getImgUrl, getImgFallbackUrl } from '../config';
 import toast from 'react-hot-toast';
 
+const ANNOUNCEMENT_COOKIE = 'community_alert_closed';
+
 const Navbar = () => {
   const NAV_ICON_SIZE = 16;
   const ACTION_ICON_SIZE = 18;
@@ -36,6 +38,10 @@ const Navbar = () => {
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showAnnouncement, setShowAnnouncement] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [navRaised, setNavRaised] = useState(false);
+  const [navSearch, setNavSearch] = useState('');
   const profileRef = useRef(null);
   const picInputRef = useRef(null);
   const notifRef = useRef(null);
@@ -44,6 +50,18 @@ const Navbar = () => {
     const onResize = () => setIsMobileView(window.innerWidth <= 768);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    const cookieEntry = document.cookie.split('; ').find((entry) => entry.startsWith(`${ANNOUNCEMENT_COOKIE}=`));
+    const isDismissed = cookieEntry?.split('=')[1] === '1';
+    if (isDismissed) setShowAnnouncement(false);
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setNavRaised(window.scrollY > 8);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   const ICON_MAP = { Sprout, Leaf, Trees, Award, Target, Trophy, Mountain, Crown, Sparkles, Users };
@@ -76,6 +94,11 @@ const Navbar = () => {
     setProfileOpen(false);
     setNotifOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const q = new URLSearchParams(location.search).get('q') || '';
+    setNavSearch(q);
+  }, [location.pathname, location.search]);
 
 
   useEffect(() => {
@@ -275,15 +298,15 @@ const Navbar = () => {
       complaint_resolved: { Icon: PartyPopper, color: '#06b6d4', bg: 'rgba(6,182,212,0.1)' },
       complaint_progress: { Icon: RefreshCw, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
       complaint_deleted: { Icon: Trash2, color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
-      password_changed: { Icon: KeyRound, color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
-      username_changed: { Icon: Pencil, color: '#7c3aed', bg: 'rgba(124,58,237,0.1)' },
+      password_changed: { Icon: KeyRound, color: '#E8212A', bg: 'rgba(139,92,246,0.1)' },
+      username_changed: { Icon: Pencil, color: '#E8212A', bg: 'rgba(232,33,42,0.1)' },
       profile_pic_changed: { Icon: ImagePlus, color: '#ec4899', bg: 'rgba(236,72,153,0.1)' },
       club_deleted: { Icon: Home, color: '#f97316', bg: 'rgba(249,115,22,0.1)' },
       club_kicked: { Icon: UserMinus, color: '#f43f5e', bg: 'rgba(244,63,94,0.1)' },
       eco_points: { Icon: Star, color: '#eab308', bg: 'rgba(234,179,8,0.1)' },
-      announcement: { Icon: MegaphoneIcon, color: '#7c3aed', bg: 'rgba(124,58,237,0.1)' }
+      announcement: { Icon: MegaphoneIcon, color: '#E8212A', bg: 'rgba(232,33,42,0.1)' }
     };
-    return map[type] || { Icon: Bell, color: '#7c3aed', bg: 'rgba(124,58,237,0.08)' };
+    return map[type] || { Icon: Bell, color: '#E8212A', bg: 'rgba(232,33,42,0.08)' };
   };
 
   const NotifIcon = ({ type }) => {
@@ -308,39 +331,79 @@ const Navbar = () => {
     return new Date(date).toLocaleDateString();
   };
 
-  const navItems = [
-  { to: '/', icon: MapPin, label: 'Map' },
+  const isAdmin = Boolean(localStorage.getItem('adminToken'));
+  const leftDesktopNavItems = [
+  { to: '/', icon: Home, label: 'Home' },
   ...(user ?
   [
   { to: '/feed', icon: Layout, label: 'Feed' },
-  { to: '/leaderboard', icon: Trophy, label: 'Leaderboard' }] :
+  { to: '/campaigns', icon: Megaphone, label: 'Campaigns' }] :
 
-  []),
-  ...(localStorage.getItem('adminToken') ?
-  [{ to: '/admin', icon: ShieldCheck, label: 'Admin' }] :
   [])];
+  const rightDesktopNavItems = [
+  ...(user ? [{ to: '/leaderboard', icon: Trophy, label: 'Leaderboard' }] : []),
+  ...(isAdmin ? [{ to: '/admin', icon: ShieldCheck, label: 'Admin' }] : [])
+  ];
+  const navItems = [...leftDesktopNavItems, ...rightDesktopNavItems];
+
+  const isFeedSearchPage = location.pathname === '/feed';
+
+  const dismissAnnouncement = () => {
+    const maxAge = 60 * 60 * 24 * 30;
+    document.cookie = `${ANNOUNCEMENT_COOKIE}=1; path=/; max-age=${maxAge}; SameSite=Lax`;
+    setShowAnnouncement(false);
+  };
+
+  const handleNavSearchChange = (value) => {
+    setNavSearch(value);
+    if (!isFeedSearchPage) return;
+    const trimmed = value.trim();
+    if (!trimmed) {
+      navigate('/feed', { replace: true });
+      return;
+    }
+    navigate(`/feed?q=${encodeURIComponent(trimmed)}`, { replace: true });
+  };
 
 
   return (
     <>
-      {
-
+      {showAnnouncement &&
+      <div className="announcement-strip">
+          <span>📢 Community Alert: Join our civic action push. <a href="/campaigns">See ongoing missions</a></span>
+          <button onClick={dismissAnnouncement} aria-label="Dismiss announcement">×</button>
+        </div>
       }
       <nav className="nav-header" style={{
         background: 'var(--nav-bg)',
         borderBottom: '1px solid var(--border)',
-        position: 'sticky', top: 0, zIndex: 1000,
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        position: 'sticky', top: showAnnouncement ? 40 : 0, zIndex: 1000,
+        boxShadow: navRaised ? '0 5px 18px rgba(17,17,17,0.08)' : '0 1px 0 rgba(17,17,17,0.05)',
         padding: isMobileView ? '10px 12px' : '12px 14px',
-        display: 'grid',
-        gridTemplateColumns: isMobileView ? 'minmax(0, 1fr) auto' : 'auto 1fr auto',
+        display: 'flex',
         alignItems: 'center',
+        justifyContent: 'space-between',
         gap: isMobileView ? 8 : 12,
-        minHeight: 56
+        minHeight: isMobileView ? 56 : 64
       }}>
-        {}
-        <div className="nav-header-left" style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden', justifySelf: 'start' }}>
+        {isMobileView &&
+        <button
+          className="nav-mobile-hamburger"
+          onClick={() => setMobileMenuOpen((v) => !v)}
+          aria-label="Open menu">
+            {mobileMenuOpen ? <X size={18} /> : <Layout size={18} />}
+          </button>
+        }
+
+        <div className="nav-header-left" style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: isMobileView ? 8 : 14,
+          minWidth: 0,
+          overflow: 'hidden',
+          flex: isMobileView ? '1 1 auto' : '1 1 0',
+          paddingLeft: isMobileView ? 0 : 10
+        }}>
           <img
             className="nav-logo"
             src="/logo.png"
@@ -353,50 +416,116 @@ const Navbar = () => {
               display: 'block'
             }}
             onError={(e) => {e.currentTarget.style.display = 'none';}} />
-          
+
+          <div className="desktop-nav-links" style={{
+            display: isMobileView ? 'none' : 'flex',
+            alignItems: 'center',
+            gap: 2,
+            background: 'transparent',
+            borderRadius: 12,
+            padding: 0,
+            border: 'none'
+          }}>
+            {leftDesktopNavItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.to;
+              return (
+                <NavLink key={item.to} to={item.to} style={{ textDecoration: 'none' }}>
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 7,
+                      padding: '9px 16px', borderRadius: 10,
+                      background: isActive ?
+                      '#E8212A' :
+                      'transparent',
+                      color: isActive ? 'white' : 'var(--text-secondary)',
+                      fontSize: '0.86rem', fontWeight: isActive ? 700 : 500,
+                      cursor: 'pointer', transition: 'all 0.2s ease',
+                      boxShadow: 'none'
+                    }}>
+
+                    <Icon size={NAV_ICON_SIZE} />
+                    {item.label}
+                  </motion.div>
+                </NavLink>);
+
+            })}
+          </div>
         </div>
 
-        {}
-        <div className="desktop-nav-links" style={{
-          display: 'none',
+        <div className="nav-search-wrap" style={{
+          display: !isMobileView && isFeedSearchPage ? 'flex' : 'none',
           alignItems: 'center',
-          gap: 2,
-          background: 'var(--surface-alt)',
-          borderRadius: 12,
-          padding: 4,
-          border: '1px solid var(--border)',
-          justifySelf: 'center'
+          flex: !isMobileView && isFeedSearchPage ? '0 1 520px' : '0 0 auto',
+          width: 'min(42vw, 520px)',
+          marginLeft: !isMobileView && isFeedSearchPage ? 'auto' : 0,
+          marginRight: !isMobileView && isFeedSearchPage ? 'auto' : 0,
+          background: '#f1f1f1',
+          border: '1px solid #ebebeb',
+          borderRadius: 999,
+          padding: '10px 14px'
         }}>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.to;
-            return (
-              <NavLink key={item.to} to={item.to} style={{ textDecoration: 'none' }}>
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 7,
-                    padding: '9px 16px', borderRadius: 10,
-                    background: isActive ?
-                    'linear-gradient(135deg, #7c3aed, #a78bfa)' :
-                    'transparent',
-                    color: isActive ? 'white' : 'var(--text-secondary)',
-                    fontSize: '0.86rem', fontWeight: isActive ? 700 : 500,
-                    cursor: 'pointer', transition: 'all 0.2s ease',
-                    boxShadow: isActive ? '0 2px 8px rgba(124,58,237,0.3)' : 'none'
-                  }}>
-                  
-                  <Icon size={NAV_ICON_SIZE} />
-                  {item.label}
-                </motion.div>
-              </NavLink>);
-
-          })}
+          <span style={{ color: '#666666', marginRight: 8 }}>🔍</span>
+          <input
+            type="text"
+            placeholder="Search issues, people, campaigns"
+            value={navSearch}
+            onChange={(e) => handleNavSearchChange(e.target.value)}
+            style={{
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              width: '100%',
+              fontSize: '0.9rem',
+              color: 'var(--text)'
+            }} />
         </div>
 
-        {}
-        <div className="nav-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, justifySelf: 'end' }}>
+        <div className="nav-header-right" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          gap: 8,
+          minWidth: 0,
+          flex: isMobileView ? '0 0 auto' : '1 1 0'
+        }}>
+          <div className="desktop-nav-links" style={{
+            display: isMobileView ? 'none' : 'flex',
+            alignItems: 'center',
+            gap: 2,
+            background: 'transparent',
+            borderRadius: 12,
+            padding: 0,
+            border: 'none'
+          }}>
+            {rightDesktopNavItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.to;
+              return (
+                <NavLink key={`right-${item.to}`} to={item.to} style={{ textDecoration: 'none' }}>
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 7,
+                      padding: '9px 16px', borderRadius: 10,
+                      background: isActive ? '#E8212A' : 'transparent',
+                      color: isActive ? 'white' : 'var(--text-secondary)',
+                      fontSize: '0.86rem', fontWeight: isActive ? 700 : 500,
+                      cursor: 'pointer', transition: 'all 0.2s ease',
+                      boxShadow: 'none'
+                    }}>
+                    <Icon size={NAV_ICON_SIZE} />
+                    {item.label}
+                  </motion.div>
+                </NavLink>);
+
+            })}
+          </div>
+
+          <div className="nav-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {}
           {user &&
           <div ref={notifRef} style={{ position: 'relative' }}>
@@ -458,7 +587,7 @@ const Navbar = () => {
                       <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>Notifications</h4>
                       {unreadCount > 0 &&
                   <button onClick={markAllRead} style={{
-                    background: 'none', border: 'none', color: '#7c3aed',
+                    background: 'none', border: 'none', color: '#E8212A',
                     fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer'
                   }}>Mark read</button>
                   }
@@ -478,7 +607,7 @@ const Navbar = () => {
                     style={{
                       padding: '12px 16px',
                       borderBottom: '1px solid var(--border)',
-                      background: n.read ? 'transparent' : 'rgba(124,58,237,0.04)',
+                      background: n.read ? 'transparent' : 'rgba(232,33,42,0.04)',
                       cursor: 'default', display: 'flex', gap: 10, alignItems: 'flex-start'
                     }}>
                           <NotifIcon type={n.type} />
@@ -519,9 +648,9 @@ const Navbar = () => {
                 padding: 0, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 overflow: 'hidden', flexShrink: 0,
-                background: profilePicUrl ? 'none' : 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+                background: profilePicUrl ? 'none' : 'linear-gradient(135deg, #E8212A, #FF6B35)',
                 borderRadius: '50%',
-                border: profileOpen ? '2px solid #7c3aed' : '2px solid var(--border)',
+                border: profileOpen ? '2px solid #E8212A' : '2px solid var(--border)',
                 transition: 'all 0.2s ease'
               }}
               aria-label="Open account menu">
@@ -554,7 +683,7 @@ const Navbar = () => {
                 }}>
                       <div style={{
                     width: 36, height: 36, borderRadius: '50%',
-                    background: profilePicUrl ? 'none' : 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+                    background: profilePicUrl ? 'none' : 'linear-gradient(135deg, #E8212A, #FF6B35)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     overflow: 'hidden', flexShrink: 0
                   }}>
@@ -630,27 +759,103 @@ const Navbar = () => {
               </AnimatePresence>
             </div> :
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/auth')}
-            style={{
-              padding: '8px 16px',
-              background: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
-              color: 'white', border: 'none', borderRadius: 8,
-              fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(124,58,237,0.3)'
-            }}>
-            
-              Sign In
-            </motion.button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => navigate('/auth')}
+              style={{
+                padding: '8px 14px',
+                background: 'transparent',
+                color: 'var(--text)',
+                border: '1px solid var(--border)',
+                borderRadius: 999,
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}>
+                Sign In
+              </motion.button>
+              {!isMobileView &&
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => navigate('/auth')}
+              style={{
+                padding: '8px 14px',
+                background: '#E8212A',
+                color: 'white',
+                border: '1px solid #E8212A',
+                borderRadius: 999,
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}>
+                  Register
+                </motion.button>
+            }
+            </div>
           }
+          </div>
         </div>
       </nav>
 
-      {
+      <AnimatePresence>
+        {isMobileView && mobileMenuOpen &&
+        <>
+            <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setMobileMenuOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(17,17,17,0.35)', zIndex: 1200 }}
+          />
+            <motion.aside
+            initial={{ x: -260 }}
+            animate={{ x: 0 }}
+            exit={{ x: -260 }}
+            transition={{ type: 'tween', duration: 0.2 }}
+            style={{
+              position: 'fixed',
+              top: showAnnouncement ? 96 : 56,
+              left: 0,
+              width: 240,
+              maxWidth: '82vw',
+              bottom: 0,
+              background: '#ffffff',
+              borderRight: '1px solid #ebebeb',
+              zIndex: 1201,
+              padding: 16,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10
+            }}>
+              {navItems.map((item) => (
+                <button
+                  key={`mobile-${item.to}`}
+                  onClick={() => {
+                    navigate(item.to);
+                    setMobileMenuOpen(false);
+                  }}
+                  style={{
+                    border: 'none',
+                    background: location.pathname === item.to ? '#E8212A' : '#f7f7f7',
+                    color: location.pathname === item.to ? '#fff' : '#111111',
+                    borderRadius: 10,
+                    minHeight: 44,
+                    fontWeight: 700,
+                    textAlign: 'left',
+                    padding: '0 14px'
+                  }}>
+                  {item.label}
+                </button>
+              ))}
+            </motion.aside>
+          </>
+        }
+      </AnimatePresence>
 
-      }
+      {isMobileView &&
       <nav className="bottom-nav-bar" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         background: 'var(--nav-bg)',
@@ -691,7 +896,7 @@ const Navbar = () => {
                   height: 30,
                   borderRadius: 10,
                   background: isActive ?
-                  'linear-gradient(135deg, #7c3aed, #a78bfa)' :
+                  'linear-gradient(135deg, #E8212A, #FF6B35)' :
                   'transparent'
                 }}>
                   <Icon size={16} color={isActive ? 'white' : 'var(--text-secondary)'} strokeWidth={2} />
@@ -699,7 +904,7 @@ const Navbar = () => {
                 <span style={{
                   fontSize: '0.58rem',
                   fontWeight: isActive ? 700 : 500,
-                  color: isActive ? '#7c3aed' : 'var(--text-tertiary)'
+                  color: isActive ? '#E8212A' : 'var(--text-tertiary)'
                 }}>
                   {item.label}
                 </span>
@@ -708,6 +913,7 @@ const Navbar = () => {
 
         })}
       </nav>
+      }
 
       {
 
@@ -776,9 +982,9 @@ const Navbar = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <div style={{
                   width: 64, height: 64, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
-                  background: pendingPic || getProfilePicUrl(profileData?.profilePic) ? 'none' : 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+                  background: pendingPic || getProfilePicUrl(profileData?.profilePic) ? 'none' : 'linear-gradient(135deg, #E8212A, #FF6B35)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: pendingPic ? '3px solid #7c3aed' : '3px solid var(--border)',
+                  border: pendingPic ? '3px solid #E8212A' : '3px solid var(--border)',
                   transition: 'border-color 0.2s'
                 }}>
                     {pendingPic ?
@@ -800,7 +1006,7 @@ const Navbar = () => {
                   }}>
                       <Camera size={14} /> {pendingPic ? 'Change' : 'Upload'}
                     </motion.button>
-                    {pendingPic && <p style={{ fontSize: '0.68rem', color: '#7c3aed', margin: '6px 0 0', fontWeight: 500 }}>Ready to save</p>}
+                    {pendingPic && <p style={{ fontSize: '0.68rem', color: '#E8212A', margin: '6px 0 0', fontWeight: 500 }}>Ready to save</p>}
                     <input ref={picInputRef} type="file" accept="image/jpeg,image/png,image/webp"
                   style={{ display: 'none' }}
                   onChange={(e) => {
@@ -960,11 +1166,11 @@ const Navbar = () => {
               style={{
                 padding: '10px 20px', borderRadius: 10, border: 'none',
                 background: canApplyChanges ?
-                'linear-gradient(135deg, #7c3aed, #a78bfa)' : 'var(--surface-alt)',
+                'linear-gradient(135deg, #E8212A, #FF6B35)' : 'var(--surface-alt)',
                 color: canApplyChanges ? 'white' : 'var(--text-tertiary)',
                 fontSize: '0.84rem', fontWeight: 700,
                 cursor: canApplyChanges ? 'pointer' : 'default',
-                boxShadow: canApplyChanges ? '0 2px 10px rgba(124,58,237,0.3)' : 'none',
+                boxShadow: canApplyChanges ? '0 2px 10px rgba(232,33,42,0.3)' : 'none',
                 transition: 'all 0.2s ease'
               }}>
                   {settingsLoading ? 'Applying...' : 'Apply Changes'}

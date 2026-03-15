@@ -155,7 +155,7 @@ const ImageCropper = ({ imageSrc, onCropDone, onCancel }) => {
             min={1} max={3} step={0.05}
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
-            style={{ flex: 1, accentColor: '#7c3aed' }} />
+            style={{ flex: 1, accentColor: '#E8212A' }} />
           
         </div>
 
@@ -165,10 +165,10 @@ const ImageCropper = ({ imageSrc, onCropDone, onCancel }) => {
           onClick={handleDone}
           style={{
             padding: isMobileView ? '7px 10px' : '10px 20px', borderRadius: isMobileView ? 8 : 10,
-            border: 'none', background: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+            border: 'none', background: 'linear-gradient(135deg, #E8212A, #FF6B35)',
             color: 'white', fontWeight: 600, fontSize: isMobileView ? '0.76rem' : '0.85rem',
             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-            boxShadow: '0 2px 10px rgba(124,58,237,0.3)'
+            boxShadow: '0 2px 10px rgba(232,33,42,0.3)'
           }}>
           <Check size={isMobileView ? 14 : 16} /> Apply
         </motion.button>
