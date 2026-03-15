@@ -1055,6 +1055,7 @@ html, body { overflow-x: hidden; }
   .issue-filters::-webkit-scrollbar { display: none; }
 
   /* Admin sidebar drawer */
+  .admin-page-shell { display: block !important; grid-template-columns: none !important; }
   .admin-ham { display: flex !important; }
   .admin-main { padding: 14px 12px !important; }
   .admin-sidebar {
@@ -1279,17 +1280,51 @@ html, body { overflow-x: hidden; }
 }
 
 .admin-page-shell {
+  display: grid !important;
+  grid-template-columns: 260px 1fr;
+  align-items: start;
   width: 100%;
+  min-height: 100%;
   overflow-x: hidden;
+  gap: 0;
+  position: relative;
+  background: var(--bg);
 }
 
 .admin-page-shell .admin-main {
   min-width: 0;
+  background: var(--surface);
+  color: var(--text);
 }
 
 .admin-page-shell table {
   width: 100%;
   table-layout: auto;
+}
+
+.admin-sidebar {
+  position: sticky;
+  top: 68px;
+  align-self: start;
+  height: calc(100vh - 68px);
+  overflow-y: auto;
+}
+
+.admin-sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.admin-sidebar-overlay.open {
+  display: block;
+  pointer-events: auto;
+  opacity: 1;
 }
 
 @media (max-width: 768px) {
