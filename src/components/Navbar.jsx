@@ -16,6 +16,7 @@ import './Navbar.css';
 import axios from 'axios';
 import { API_URL, getImgUrl, getImgFallbackUrl } from '../config';
 import toast from 'react-hot-toast';
+import { useLanguage } from '../context/LanguageContext';
 
 const ANNOUNCEMENT_COOKIE = 'community_alert_closed';
 
@@ -23,6 +24,7 @@ const Navbar = () => {
   const NAV_ICON_SIZE = 16;
   const ACTION_ICON_SIZE = 18;
   const { isDark, toggle } = useTheme();
+  const { language, changeLanguage, t } = useLanguage();
   const { ecoPoints, badges, equippedBadge, equipBadge, allBadges, fetchEcoPoints } = useEcoPoints();
   const navigate = useNavigate();
   const location = useLocation();
@@ -341,7 +343,7 @@ const Navbar = () => {
 
   [])];
   const rightDesktopNavItems = [
-  ...(user ? [{ to: '/leaderboard', icon: Trophy, label: 'Leaderboard' }] : []),
+  ...(user ? [{ to: '/leaderboard', icon: Trophy, label: 'Ranking' }] : []),
   ...(isAdmin ? [{ to: '/admin', icon: ShieldCheck, label: 'Admin' }] : [])
   ];
   const navItems = [...leftDesktopNavItems, ...rightDesktopNavItems];
@@ -370,7 +372,7 @@ const Navbar = () => {
     <>
       {showAnnouncement &&
       <div className="announcement-strip">
-          <span>📢 Community Alert: Join our civic action push. <a href="/campaigns">See ongoing missions</a></span>
+          <span>📢 {t('Community Alert: Join our civic action push.')} <a href="/campaigns">{t('See ongoing missions')}</a></span>
           <button onClick={dismissAnnouncement} aria-label="Dismiss announcement">×</button>
         </div>
       }
@@ -384,13 +386,13 @@ const Navbar = () => {
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: isMobileView ? 8 : 12,
-        minHeight: isMobileView ? 56 : 64
+        minHeight: isMobileView ? 60 : 74
       }}>
         {isMobileView &&
         <button
           className="nav-mobile-hamburger"
           onClick={() => setMobileMenuOpen((v) => !v)}
-          aria-label="Open menu">
+          aria-label={t('Open menu')}>
             {mobileMenuOpen ? <X size={18} /> : <Layout size={18} />}
           </button>
         }
@@ -410,7 +412,7 @@ const Navbar = () => {
               src="/logo.png"
               alt="Pariwartan"
               style={{
-                height: isMobileView ? 36 : 42,
+                height: isMobileView ? 42 : 56,
                 width: 'auto',
                 maxWidth: isMobileView ? 'calc(100vw - 140px)' : '100%',
                 objectFit: 'contain',
@@ -421,7 +423,7 @@ const Navbar = () => {
               className="nav-logo-mark"
               src="/assets/logo.png"
               alt="Genz Reports"
-              style={{ height: isMobileView ? 28 : 32, width: 'auto', display: 'block' }}
+              style={{ height: isMobileView ? 32 : 40, width: 'auto', display: 'block' }}
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
           </NavLink>
@@ -456,7 +458,7 @@ const Navbar = () => {
                     }}>
 
                     <Icon size={NAV_ICON_SIZE} />
-                    {item.label}
+                    {t(item.label)}
                   </motion.div>
                 </NavLink>);
 
@@ -479,7 +481,7 @@ const Navbar = () => {
           <span style={{ color: '#666666', marginRight: 8 }}>🔍</span>
           <input
             type="text"
-            placeholder="Search issues, people, campaigns"
+            placeholder={t('Search issues, people, campaigns')}
             value={navSearch}
             onChange={(e) => handleNavSearchChange(e.target.value)}
             style={{
@@ -527,7 +529,7 @@ const Navbar = () => {
                       boxShadow: 'none'
                     }}>
                     <Icon size={NAV_ICON_SIZE} />
-                    {item.label}
+                    {t(item.label)}
                   </motion.div>
                 </NavLink>);
 
@@ -535,6 +537,27 @@ const Navbar = () => {
           </div>
 
           <div className="nav-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <button
+            onClick={() => changeLanguage(language === 'ne' ? 'en' : 'ne')}
+            title={language === 'ne' ? 'Switch to English' : 'नेपालीमा बदल्नुहोस्'}
+            aria-label={language === 'ne' ? 'Switch to English' : 'Switch to Nepali'}
+            style={{
+              height: 36,
+              padding: '0 10px',
+              borderRadius: 10,
+              border: '1px solid var(--border)',
+              background: 'var(--surface-alt)',
+              color: 'var(--text)',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              letterSpacing: '0.02em',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              {language === 'ne' ? 'EN' : 'ने'}
+            </button>
           {}
           {user &&
           <div ref={notifRef} style={{ position: 'relative' }}>
@@ -593,12 +616,12 @@ const Navbar = () => {
                   padding: '14px 16px', borderBottom: '1px solid var(--border)',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between'
                 }}>
-                      <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>Notifications</h4>
+                      <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>{t('Notifications')}</h4>
                       {unreadCount > 0 &&
                   <button onClick={markAllRead} style={{
                     background: 'none', border: 'none', color: '#E8212A',
                     fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer'
-                  }}>Mark read</button>
+                  }}>{t('Mark read')}</button>
                   }
                     </div>
                     {}
@@ -606,7 +629,7 @@ const Navbar = () => {
                       {notifications.length === 0 ?
                   <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-tertiary)' }}>
                           <Bell size={28} style={{ opacity: 0.3, marginBottom: 8 }} />
-                          <p style={{ fontSize: '0.82rem', margin: 0 }}>No notifications</p>
+                          <p style={{ fontSize: '0.82rem', margin: 0 }}>{t('No notifications')}</p>
                         </div> :
                   notifications.map((n) =>
                   <motion.div
@@ -1015,7 +1038,7 @@ const Navbar = () => {
                   }}>
                       <Camera size={14} /> {pendingPic ? 'Change' : 'Upload'}
                     </motion.button>
-                    {pendingPic && <p style={{ fontSize: '0.68rem', color: '#E8212A', margin: '6px 0 0', fontWeight: 500 }}>Ready to save</p>}
+                    {pendingPic && <p style={{ fontSize: '0.68rem', color: '#E8212A', margin: '6px 0 0', fontWeight: 500 }}>{t('Ready to save')}</p>}
                     <input ref={picInputRef} type="file" accept="image/jpeg,image/png,image/webp"
                   style={{ display: 'none' }}
                   onChange={(e) => {
@@ -1060,9 +1083,9 @@ const Navbar = () => {
                   {usernameError ?
                 <p className="input-help error">{usernameError}</p> :
                 profileData?.lastUsernameChange ?
-                <p className="input-help info">Can change once every 30 days</p> :
+                <p className="input-help info">{t('Can change once every 30 days')}</p> :
                 usernameChanged ?
-                <p className="input-help info">Username will update when you apply changes.</p> :
+                <p className="input-help info">{t('Username will update when you apply changes.')}</p> :
                 null}
                 </div>
 
@@ -1108,7 +1131,7 @@ const Navbar = () => {
                     <Award size={12} /> My Badges
                   </label>
                   {badges.length === 0 ?
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', margin: 0 }}>No badges earned yet. Keep reporting!</p> :
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', margin: 0 }}>{t('No badges earned yet. Keep reporting!')}</p> :
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8 }}>
                       {badges.map((bId) => {

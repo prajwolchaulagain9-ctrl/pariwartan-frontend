@@ -14,6 +14,7 @@ import TermsPage from './pages/TermsPage';
 import { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 import { API_URL } from './config';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 
 
 axios.interceptors.response.use(
@@ -40,6 +41,7 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const ShellLayout = () => {
+  const { t, language } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const feedLayoutPaths = ['/feed', '/campaigns', '/leaderboard', '/my-complaints'];
@@ -50,26 +52,9 @@ const ShellLayout = () => {
     if (!isFeedLayout) return;
 
     let alive = true;
-    axios.get(`${API_URL}/api/suggestions`).then((r) => {
+    axios.get(`${API_URL}/api/suggestions/trends?limit=6`).then((r) => {
       if (!alive) return;
-      const items = Array.isArray(r.data) ? r.data : [];
-      const tagMap = new Map();
-
-      items.forEach((item) => {
-        const rawTags = Array.isArray(item?.tags) ? item.tags : typeof item?.tags === 'string' ? item.tags.split(/[\s,]+/) : [];
-        const titleDescTags = `${item?.title || ''} ${item?.description || ''}`.match(/#[a-zA-Z0-9_]+/g) || [];
-        [...rawTags, ...titleDescTags].forEach((tag) => {
-          const normalized = String(tag || '').trim().replace(/[^#a-zA-Z0-9_]/g, '');
-          if (!normalized) return;
-          const withHash = normalized.startsWith('#') ? normalized : `#${normalized}`;
-          tagMap.set(withHash, (tagMap.get(withHash) || 0) + 1);
-        });
-      });
-
-      const trends = Array.from(tagMap.entries()).
-      sort((a, b) => b[1] - a[1]).
-      slice(0, 6).
-      map(([tag, count]) => ({ tag, count }));
+      const trends = Array.isArray(r.data) ? r.data : [];
       setTrendItems(trends);
     }).catch(() => {
       if (alive) setTrendItems([]);
@@ -88,11 +73,11 @@ const ShellLayout = () => {
       <div id="main-content" className={`app-shell-content ${isFeedLayout ? 'three-column-shell' : ''}`}>
         {isFeedLayout &&
         <aside className="left-sidebar-rail">
-            <h4>Explore</h4>
-            <Link to="/feed">Home Feed</Link>
-            <Link to="/campaigns">Campaigns</Link>
-            <Link to="/leaderboard">Leaderboard</Link>
-            <Link to="/my-complaints">My Reports</Link>
+            <h4>{t('Explore')}</h4>
+            <Link to="/feed">{t('Home Feed')}</Link>
+            <Link to="/campaigns">{t('Campaigns')}</Link>
+            <Link to="/leaderboard">{t('Ranking')}</Link>
+            <Link to="/my-complaints">{t('My Reports')}</Link>
           </aside>
         }
 
@@ -102,7 +87,7 @@ const ShellLayout = () => {
 
         {isFeedLayout &&
         <aside className="right-sidebar-rail">
-            <h4>Trends for You</h4>
+            <h4>{t('Trends for You')}</h4>
             {hasTrends ?
           <ol>
                 {trendItems.map((trend) =>
@@ -111,12 +96,12 @@ const ShellLayout = () => {
                   className="trend-link-btn"
                   onClick={() => navigate(`/feed?q=${encodeURIComponent(trend.tag)}`)}>
                       <strong>{trend.tag}</strong>
-                      <span>{trend.count} posts</span>
+                      <span>{trend.count} {t('posts')}</span>
                     </button>
                   </li>
               )}
               </ol> :
-          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.82rem' }}>No trend tags yet.</p>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{t('No trend tags yet.')}</p>
           }
           </aside>
         }
@@ -125,25 +110,25 @@ const ShellLayout = () => {
       <footer className="site-footer">
         <div className="site-footer-grid">
           <div>
-            <h5>Company</h5>
-            <Link to="/">About</Link>
-            <Link to="/terms">Terms</Link>
-            <Link to="/auth">Careers</Link>
+            <h5>{t('Company')}</h5>
+            <Link to="/">{t('About')}</Link>
+            <Link to="/terms">{t('Terms')}</Link>
+            <Link to="/auth">{t('Careers')}</Link>
           </div>
           <div>
-            <h5>Community</h5>
-            <Link to="/feed">Feed</Link>
-            <Link to="/campaigns">Campaigns</Link>
-            <Link to="/leaderboard">Leaderboard</Link>
+            <h5>{t('Community')}</h5>
+            <Link to="/feed">{t('Feed')}</Link>
+            <Link to="/campaigns">{t('Campaigns')}</Link>
+            <Link to="/leaderboard">{t('Ranking')}</Link>
           </div>
           <div>
-            <h5>Support</h5>
-            <Link to="/auth">Help Center</Link>
-            <Link to="/auth">Report Abuse</Link>
-            <Link to="/terms">Privacy</Link>
+            <h5>{t('Support')}</h5>
+            <Link to="/auth">{t('Help Center')}</Link>
+            <Link to="/auth">{t('Report Abuse')}</Link>
+            <Link to="/terms">{t('Privacy')}</Link>
           </div>
           <div>
-            <h5>Connect</h5>
+            <h5>{t('Connect')}</h5>
             <div className="footer-social-row">
               <a href="https://facebook.com" target="_blank" rel="noreferrer">Facebook</a>
               <a href="https://twitter.com" target="_blank" rel="noreferrer">X</a>
@@ -152,8 +137,8 @@ const ShellLayout = () => {
           </div>
         </div>
         <div className="site-footer-bottom">
-          <span>Copyright 2026 Pariwartan</span>
-          <span>Protected by Google reCAPTCHA</span>
+          <span>{t('Copyright')} 2026 Pariwartan</span>
+          <span>{t('Protected by Google reCAPTCHA')}</span>
         </div>
       </footer>
     </>
@@ -163,6 +148,7 @@ const ShellLayout = () => {
 function App() {
   return (
     <ThemeProvider>
+      <LanguageProvider>
       <Router>
         <Toaster position="top-right"
         containerStyle={{ zIndex: 999999 }}
@@ -185,7 +171,7 @@ function App() {
           }
         }} />
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-          <a href="#main-content" className="skip-link">Skip to main content</a>
+          <SkipLink />
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/banned" element={<BannedPage />} />
@@ -203,8 +189,14 @@ function App() {
           </Routes>
         </div>
       </Router>
+      </LanguageProvider>
     </ThemeProvider>);
 
 }
+
+const SkipLink = () => {
+  const { t } = useLanguage();
+  return <a href="#main-content" className="skip-link">{t('Skip to main content')}</a>;
+};
 
 export default App;

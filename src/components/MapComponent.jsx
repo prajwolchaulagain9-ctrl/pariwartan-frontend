@@ -4,7 +4,6 @@ import Map, { Marker, Popup, NavigationControl, GeolocateControl, Source, Layer 
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Navigation, Send, X, MapPin, Clock, User, Camera, ShieldAlert, AlertTriangle, Trash2, Lightbulb, Megaphone } from 'lucide-react';
 import Lightbox from './Lightbox';
-import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
 import { API_URL, getImgUrl } from '../config';
 
@@ -26,7 +25,6 @@ const getMarkerDef = (type) => MARKER_TYPES.find((m) => m.id === type) || MARKER
 
 
 const MapComponent = ({ onPinLocation, markers = [], pinMode = false, userLocation = null, manualLocation = null, zoomToId = null, onLocateMe, onCancelPin }) => {
-  const { isDark } = useTheme();
   const mapRef = useRef();
   const [isMobileView, setIsMobileView] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
   const [zoom, setZoom] = useState(7);
@@ -60,8 +58,7 @@ const MapComponent = ({ onPinLocation, markers = [], pinMode = false, userLocati
   };
 
 
-  const lightStyle = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
-  const darkStyle = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
+  const colorfulStyle = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
 
   useEffect(() => {
     fetch('https://raw.githubusercontent.com/opentechcommunity/map-of-nepal/master/nepal.geojson').
@@ -85,7 +82,7 @@ const MapComponent = ({ onPinLocation, markers = [], pinMode = false, userLocati
   const onMapLoad = (e) => {
     const map = e.target;
 
-    const poiLayers = ['poi', 'landmark', 'hospital', 'school', 'park', 'attraction'];
+    const poiLayers = ['poi', 'landmark', 'hospital', 'school', 'attraction'];
     poiLayers.forEach((layer) => {
       if (map.getLayer(layer)) map.setLayoutProperty(layer, 'visibility', 'none');
     });
@@ -102,7 +99,7 @@ const MapComponent = ({ onPinLocation, markers = [], pinMode = false, userLocati
             type: 'fill-extrusion',
             minzoom: 15,
             paint: {
-              'fill-extrusion-color': isDark ? '#333333' : '#e5e5e5',
+              'fill-extrusion-color': '#c7d9bd',
               'fill-extrusion-height': ['get', 'height'],
               'fill-extrusion-base': ['get', 'min_height'],
               'fill-extrusion-opacity': 0.7
@@ -120,7 +117,7 @@ const MapComponent = ({ onPinLocation, markers = [], pinMode = false, userLocati
       <Map
         ref={mapRef}
         initialViewState={{ longitude: 84.124, latitude: 28.3949, zoom: 7 }}
-        mapStyle={isDark ? darkStyle : lightStyle}
+        mapStyle={colorfulStyle}
         style={{ width: '100%', height: '100%' }}
         onZoom={(e) => setZoom(e.viewState.zoom)}
         onLoad={onMapLoad}

@@ -6,7 +6,7 @@ import { API_URL, getImgUrl, getImgFallbackUrl } from '../config';
 import {
   Lock, User, ShieldCheck, CheckCircle, XCircle, Trash2, Search,
   AlertCircle, Loader2, Megaphone, Activity, Users, Settings,
-  Plus, FileText, ChevronRight, Filter, PieChart, Info, MapPin,
+  Plus, FileText, ChevronRight, Filter, PieChart, Info, MapPin, Building2,
   ExternalLink, Calendar, PlusCircle, Check, Eye, Bell, Send, Camera,
   Menu, X as XIcon } from
 'lucide-react';
@@ -36,6 +36,8 @@ const AdminPage = () => {
   const [priorityFilter, setPriorityFilter] = useState('All');
   const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [overrideModal, setOverrideModal] = useState(null);
+  const [overrideReason, setOverrideReason] = useState('');
   const [lightbox, setLightbox] = useState(null);
 
   const [campaigns, setCampaigns] = useState([]);
@@ -93,6 +95,19 @@ const AdminPage = () => {
       return;
     }
     e.currentTarget.style.display = 'none';
+  };
+
+  const getSuggestionDepartment = (suggestion) => {
+    const rawDepartment =
+      suggestion?.departmentRouting?.departmentName ||
+      suggestion?.departmentRouting?.department ||
+      suggestion?.departmentName ||
+      suggestion?.department ||
+      suggestion?.assignedDepartment?.name ||
+      suggestion?.assignedDepartment;
+
+    if (typeof rawDepartment === 'string' && rawDepartment.trim()) return rawDepartment.trim();
+    return null;
   };
 
   const clearAdminSession = () => {
@@ -280,13 +295,15 @@ const AdminPage = () => {
     {setLoading(false);}
   };
 
-  const updateStatus = async (id, status, reason = '') => {
+  const updateStatus = async (id, status, reason = '', overrideReasonText = '') => {
     try {
       await axios.patch(`${API_URL}/api/suggestions/${id}/status`,
-      { status, rejectionReason: reason },
+      { status, rejectionReason: reason, overrideReason: overrideReasonText },
       { headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` } });
       toast.success('Status updated to ' + status);
-      setRejectModal(null);setRejectReason('');fetchSuggestions();fetchLogs();
+      setRejectModal(null);setRejectReason('');
+      setOverrideModal(null);setOverrideReason('');
+      fetchSuggestions();fetchLogs();
     } catch (err) {toast.error(err.response?.data?.message || 'Update failed');}
   };
 
@@ -685,7 +702,7 @@ const AdminPage = () => {
                 
                 </div>
                 <div className="issue-filters" style={{ display: 'flex', gap: 6, padding: '6px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', flexWrap: 'wrap' }}>
-                  {['All', 'Pending', 'Progress', 'Resolved'].map((filter) =>
+                  {['All', 'Pending', 'Progress', 'Resolved', 'Rejected'].map((filter) =>
                   <button
                     key={filter}
                     onClick={() => setStatusFilter(filter)}
@@ -790,6 +807,9 @@ const AdminPage = () => {
                   e.currentTarget.style.borderColor = 'var(--border)';
                   e.currentTarget.style.boxShadow = 'none';
                 }}>
+                    {(() => {
+                  const departmentName = getSuggestionDepartment(s);
+                  return (
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                         <span style={{
@@ -822,6 +842,26 @@ const AdminPage = () => {
                           );
                         })()}
 
+                        <span
+                          style={{
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            color: departmentName ? '#0f766e' : '#9a3412',
+                            background: departmentName ? 'rgba(13, 148, 136, 0.12)' : 'rgba(249, 115, 22, 0.14)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            maxWidth: 220,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}
+                          title={departmentName ? `Department: ${departmentName}` : 'Department: Not assigned'}>
+                            <Building2 size={10} /> {departmentName || 'Not assigned'}
+                          </span>
+
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginLeft: 'auto' }}>
                           Ward {s.wada} ??? {s.city}
                         </span>
@@ -832,6 +872,18 @@ const AdminPage = () => {
                       <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
                         {s.description}
                       </p>
+
+                      {s.rejectionReason &&
+                      <div style={{ marginTop: 8, fontSize: '0.78rem', color: '#b91c1c', background: 'rgba(220, 38, 38, 0.06)', border: '1px solid rgba(220, 38, 38, 0.2)', borderRadius: 8, padding: '8px 10px' }}>
+                          <strong>Rejection reason:</strong> {s.rejectionReason}
+                        </div>
+                      }
+
+                      {s.adminOverride?.reason &&
+                      <div style={{ marginTop: 8, fontSize: '0.78rem', color: '#0f766e', background: 'rgba(13, 148, 136, 0.07)', border: '1px solid rgba(13, 148, 136, 0.25)', borderRadius: 8, padding: '8px 10px' }}>
+                          <strong>Lifted by {s.adminOverride?.liftedBy || 'Admin'}:</strong> {s.adminOverride.reason}
+                        </div>
+                      }
 
                       {s.analysis && s.analysis.feedback && (
                         <div style={{ marginTop: 12, padding: 10, borderRadius: 8, background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.15)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
@@ -877,7 +929,33 @@ const AdminPage = () => {
                           </div>
                         </div>
                   }
+
+                      {s.departmentRouting?.primaryEmail && (
+                      <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-start' }}>
+                          <span
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: 999,
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          background: s.departmentRouting?.notifiedAt ? 'rgba(15, 118, 110, 0.12)' : 'rgba(30, 64, 175, 0.12)',
+                          color: s.departmentRouting?.notifiedAt ? '#0f766e' : '#1e40af',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          maxWidth: '100%',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}
+                        title={`Sent to: ${s.departmentRouting.primaryEmail}`}>
+                            <Send size={11} /> Sent to: {s.departmentRouting.primaryEmail}
+                          </span>
+                        </div>
+                      )}
                     </div>
+                  );
+                })()}
                     <div className="issue-actions" style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 120 }}>
                       {s.status === 'Pending' &&
                   <button
@@ -960,6 +1038,35 @@ const AdminPage = () => {
                           </button>
                         </>
                   }
+                      {s.status === 'Rejected' &&
+                  <button
+                    onClick={() => setOverrideModal({ id: s._id, title: s.title })}
+                    style={{
+                      padding: '8px 12px',
+                      background: 'rgba(22, 163, 74, 0.1)',
+                      color: '#15803d',
+                      border: '1px solid rgba(22, 163, 74, 0.25)',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 4,
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = '#16a34a';
+                      e.target.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = 'rgba(22, 163, 74, 0.1)';
+                      e.target.style.color = '#15803d';
+                    }}>
+                        <CheckCircle size={12} /> Lift + Approve
+                      </button>
+                      }
                       <button
                     onClick={() => setRejectModal({ id: s._id })}
                     style={{
@@ -1548,6 +1655,28 @@ const AdminPage = () => {
               </div>
               <div className="modal-footer">
                  <button className="btn-danger btn-lg" style={{ width: '100%', justifyContent: 'center' }} onClick={() => updateStatus(rejectModal.id, 'Rejected', rejectReason)}>Submit Rejection</button>
+              </div>
+            </motion.div>
+          </div>
+        }
+
+        {overrideModal &&
+        <div className="modal-overlay" onClick={() => setOverrideModal(null)}>
+            <motion.div className="modal-box" onClick={(e) => e.stopPropagation()} initial={{ scale: 0.95 }} animate={{ scale: 1 }}>
+              <div className="modal-header"><span className="modal-title">Lift Rejection and Approve</span></div>
+              <div className="modal-body">
+                <p className="text-sm text-3" style={{ marginBottom: 12 }}>
+                  Provide mandatory reason for lifting this rejection and approving the complaint.
+                </p>
+                <textarea className="input" rows={5} placeholder="Reason for lift approval..." value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} />
+              </div>
+              <div className="modal-footer">
+                 <button
+                  className="btn-primary btn-lg"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                  onClick={() => updateStatus(overrideModal.id, 'Progress', undefined, overrideReason)}>
+                  Submit Lift + Approve
+                </button>
               </div>
             </motion.div>
           </div>

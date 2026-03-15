@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Mukta:wght@400;500;700;800&family=Tiro+Devanagari+Latin:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Mukta:wght@400;500;700;800&family=Noto+Sans+Devanagari:wght@500;600;700;800&family=Tiro+Devanagari+Latin:ital@0;1&display=swap');
 
 /* ═══════════════════════════════════════════════════════════════════ */
 /* PARIWARTAN DESIGN SYSTEM v2 — Bold Civic Tech                     */
@@ -140,6 +140,27 @@ h4 { font-size: 1.05rem; line-height: 1.4; }
 p { margin: 0; }
 a { color: var(--accent); text-decoration: none; transition: color var(--transition); }
 a:hover { color: var(--accent-hover); }
+
+/* Stronger, legible Nepali typography when UI language is Nepali */
+html[lang="ne"] body,
+html[lang="ne"] button,
+html[lang="ne"] input,
+html[lang="ne"] textarea,
+html[lang="ne"] select {
+  font-family: 'Noto Sans Devanagari', 'Mukta', 'DM Sans', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+html[lang="ne"] h1,
+html[lang="ne"] h2,
+html[lang="ne"] h3,
+html[lang="ne"] h4,
+html[lang="ne"] h5,
+html[lang="ne"] h6 {
+  font-family: 'Noto Sans Devanagari', 'Mukta', 'DM Sans', sans-serif;
+  font-weight: 800;
+}
 
 img { display: block; max-width: 100%; }
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { API_URL } from '../config';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
 import {
   Megaphone,
   Loader2,
@@ -42,7 +43,7 @@ const fallbackCampaigns = [
 }];
 
 
-const Countdown = ({ endDate }) => {
+const Countdown = ({ endDate, t }) => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
@@ -69,10 +70,10 @@ const Countdown = ({ endDate }) => {
   if (!endDate) return null;
 
   const items = [
-  { label: 'Days', value: timeLeft.days, color: '#E8212A' },
-  { label: 'Hours', value: timeLeft.hours, color: '#f59e0b' },
-  { label: 'Mins', value: timeLeft.minutes, color: '#10b981' },
-  { label: 'Secs', value: timeLeft.seconds, color: '#3b82f6' }];
+  { label: t('Days'), value: timeLeft.days, color: '#E8212A' },
+  { label: t('Hours'), value: timeLeft.hours, color: '#f59e0b' },
+  { label: t('Mins'), value: timeLeft.minutes, color: '#10b981' },
+  { label: t('Secs'), value: timeLeft.seconds, color: '#3b82f6' }];
 
 
   return (
@@ -105,25 +106,25 @@ const Countdown = ({ endDate }) => {
 
 };
 
-const MapOverlay = ({ query, onClose }) => {
+const MapOverlay = ({ query, onClose, t }) => {
   const embedUrl = `https://www.google.com/maps?q=${encodeURIComponent(query || '')}&output=embed`;
 
   return (
     <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ zIndex: 2000, backdropFilter: 'blur(6px)' }}>
       <motion.div className="modal-box" initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} style={{ maxWidth: '90%', width: 1000, height: '80vh', padding: 0, overflow: 'hidden', borderRadius: 16, boxShadow: 'var(--shadow-xl)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1.5px solid var(--border)', background: 'var(--bg)' }}>
-          <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>Campaign Location</span>
+          <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>{t('Campaign Location')}</span>
           <motion.button whileHover={{ rotate: 90, scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={onClose} style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 8, padding: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text)' }}>
             <X size={18} />
           </motion.button>
         </div>
-        <iframe src={embedUrl} style={{ width: '100%', height: 'calc(100% - 57px)', border: 'none' }} loading="lazy" title="Campaign Map" />
+        <iframe src={embedUrl} style={{ width: '100%', height: 'calc(100% - 57px)', border: 'none' }} loading="lazy" title={t('Campaign Map')} />
       </motion.div>
     </motion.div>);
 
 };
 
-const RegisterModal = ({ campaign, onClose }) => {
+const RegisterModal = ({ campaign, onClose, t }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', contact: '', address: '' });
 
@@ -132,10 +133,10 @@ const RegisterModal = ({ campaign, onClose }) => {
     setLoading(true);
     try {
       await axios.post(`${API_URL}/api/campaigns/${campaign._id}/register`, formData);
-      toast.success(`Successfully registered for ${campaign.title}`);
+      toast.success(`${t('Successfully registered for')} ${campaign.title}`);
       onClose();
     } catch {
-      toast.error('Registration failed.');
+      toast.error(t('Registration failed.'));
     } finally {
       setLoading(false);
     }
@@ -146,8 +147,8 @@ const RegisterModal = ({ campaign, onClose }) => {
       <motion.div className="modal-box" initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} style={{ borderRadius: 16, maxWidth: 500, boxShadow: 'var(--shadow-xl)', overflow: 'hidden' }}>
         <div style={{ padding: 24, borderBottom: '1.5px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text)', margin: '0 0 6px 0' }}>Join Campaign</h2>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>Register to participate</p>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text)', margin: '0 0 6px 0' }}>{t('Join Campaign')}</h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>{t('Register to participate')}</p>
           </div>
           <motion.button whileHover={{ rotate: 90, scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={onClose} style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 8, padding: 8, display: 'flex', alignItems: 'center', cursor: 'pointer', color: 'var(--text)' }}>
             <X size={18} />
@@ -156,10 +157,10 @@ const RegisterModal = ({ campaign, onClose }) => {
 
         <form onSubmit={submit} style={{ padding: 24, display: 'grid', gap: 14 }}>
           {[
-          { key: 'name', label: 'Name', type: 'text', placeholder: 'Full name' },
-          { key: 'email', label: 'Email', type: 'email', placeholder: 'you@example.com' },
-          { key: 'contact', label: 'Contact', type: 'text', placeholder: '+977 98...' },
-          { key: 'address', label: 'Address', type: 'text', placeholder: 'Your address' }].
+          { key: 'name', label: t('Name'), type: 'text', placeholder: t('Full name') },
+          { key: 'email', label: t('Email'), type: 'email', placeholder: 'you@example.com' },
+          { key: 'contact', label: t('Contact'), type: 'text', placeholder: '+977 98...' },
+          { key: 'address', label: t('Address'), type: 'text', placeholder: t('Your address') }].
           map((field) =>
           <div key={field.key}>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -178,11 +179,11 @@ const RegisterModal = ({ campaign, onClose }) => {
 
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
             <motion.button type="button" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={onClose} style={{ flex: 1, padding: '11px 16px', background: 'var(--bg)', color: 'var(--text)', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}>
-              Cancel
+              {t('Cancel')}
             </motion.button>
             <motion.button type="submit" disabled={loading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1, padding: '11px 16px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontSize: '0.9rem', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: loading ? 0.65 : 1 }}>
               {loading ? <Loader2 size={14} className="spin" /> : <CheckCircle2 size={14} />}
-              {loading ? 'Registering...' : 'Confirm Registration'}
+              {loading ? t('Registering...') : t('Confirm Registration')}
             </motion.button>
           </div>
         </form>
@@ -191,7 +192,7 @@ const RegisterModal = ({ campaign, onClose }) => {
 
 };
 
-const CampaignInfoModal = ({ campaign, onClose }) => {
+const CampaignInfoModal = ({ campaign, onClose, t }) => {
   const [activeTab, setActiveTab] = useState('About');
   const [showMap, setShowMap] = useState(false);
   const motives = Array.isArray(campaign.motives) ?
@@ -218,7 +219,7 @@ const CampaignInfoModal = ({ campaign, onClose }) => {
         <div style={{ display: 'flex', borderBottom: '1.5px solid var(--border)', flexShrink: 0 }}>
           {['About', 'Motives', 'Organizer'].map((tab) =>
           <motion.button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '14px 16px', background: activeTab === tab ? 'var(--bg)' : 'transparent', border: 'none', borderBottom: activeTab === tab ? '2px solid var(--accent)' : '2px solid transparent', color: activeTab === tab ? 'var(--accent)' : 'var(--text-secondary)', fontWeight: activeTab === tab ? 700 : 600, fontSize: '0.85rem', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              {tab}
+              {t(tab)}
             </motion.button>
           )}
         </div>
@@ -256,7 +257,7 @@ const CampaignInfoModal = ({ campaign, onClose }) => {
                 </div>
                 <div>
                   <h4 style={{ margin: '0 0 4px 0', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>Pariwartan Initiative</h4>
-                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Community Impact Partner</p>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('Community Impact Partner')}</p>
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -272,7 +273,7 @@ const CampaignInfoModal = ({ campaign, onClose }) => {
 
               })}
                 <a href={social.website || '#'} style={{ padding: 12, border: '1.5px solid var(--border)', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600, gridColumn: '1 / -1' }}>
-                  <Globe size={16} /> Website
+                  <Globe size={16} /> {t('Website')}
                 </a>
               </div>
             </div>
@@ -281,19 +282,20 @@ const CampaignInfoModal = ({ campaign, onClose }) => {
 
         <div style={{ borderTop: '1.5px solid var(--border)', padding: '16px 20px', flexShrink: 0 }}>
           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={onClose} style={{ width: '100%', padding: '11px 16px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 8, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}>
-            Close
+            {t('Close')}
           </motion.button>
         </div>
       </motion.div>
 
       <AnimatePresence>
-        {showMap && <MapOverlay query={campaign.location || ''} onClose={() => setShowMap(false)} />}
+        {showMap && <MapOverlay query={campaign.location || ''} onClose={() => setShowMap(false)} t={t} />}
       </AnimatePresence>
     </motion.div>);
 
 };
 
 const CampaignsPage = ({ embedded = false }) => {
+  const { t } = useLanguage();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [registerFor, setRegisterFor] = useState(null);
@@ -308,17 +310,17 @@ const CampaignsPage = ({ embedded = false }) => {
     }).
     catch(() => {
       setCampaigns(fallbackCampaigns);
-      toast.error('Could not load campaigns. Showing fallback items.');
+      toast.error(t('Could not load campaigns. Showing fallback items.'));
     }).
     finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   const content =
   <>
       {!embedded &&
     <motion.header initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.03em', margin: '0 0 4px 0' }}>Campaigns</h1>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-tertiary)', fontWeight: 500, margin: 0 }}>Join initiatives. Support causes.</p>
+          <h1 style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.03em', margin: '0 0 4px 0' }}>{t('Campaigns')}</h1>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-tertiary)', fontWeight: 500, margin: 0 }}>{t('Join initiatives. Support causes.')}</p>
         </motion.header>
     }
 
@@ -333,8 +335,8 @@ const CampaignsPage = ({ embedded = false }) => {
             <div style={{ width: 72, height: 72, borderRadius: 12, background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
               <Megaphone size={36} style={{ color: 'var(--text-tertiary)' }} />
             </div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text)', margin: '0 0 8px 0' }}>No campaigns yet</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: 380, margin: 0 }}>Check back soon for new campaigns.</p>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text)', margin: '0 0 8px 0' }}>{t('No campaigns yet')}</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: 380, margin: 0 }}>{t('Check back soon for new campaigns.')}</p>
           </motion.div> :
 
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: 24 }}>
@@ -352,11 +354,11 @@ const CampaignsPage = ({ embedded = false }) => {
                     <div style={{ position: 'absolute', top: 12, left: 12, right: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       {campaign.startDate && new Date(campaign.startDate) > new Date() ?
               <motion.span animate={{ y: [0, -2, 0] }} transition={{ repeat: Infinity, duration: 2 }} style={{ padding: '5px 12px', background: 'var(--accent)', color: 'white', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                          Coming Soon
+                          {t('Coming Soon')}
                         </motion.span> :
               <span />}
                       <span style={{ padding: '5px 12px', background: 'rgba(0,0,0,0.5)', color: 'white', borderRadius: 6, fontSize: '0.7rem', fontWeight: 600 }}>
-                        {campaign.startDate && new Date(campaign.startDate) > new Date() ? 'Upcoming' : campaign.status || 'Active'}
+                        {campaign.startDate && new Date(campaign.startDate) > new Date() ? t('Upcoming') : t(campaign.status || 'Active')}
                       </span>
                     </div>
                   </div>
@@ -367,16 +369,16 @@ const CampaignsPage = ({ embedded = false }) => {
 
                     {campaign.endDate &&
             <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
-                        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Campaign Ends In</div>
-                        <Countdown endDate={campaign.endDate} />
+                        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>{t('Campaign Ends In')}</div>
+                        <Countdown endDate={campaign.endDate} t={t} />
                       </div>
             }
 
                     <div style={{ display: 'flex', gap: 10 }}>
                       <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={() => setRegisterFor(campaign)} style={{ flex: 1, padding: '10px 14px', background: 'linear-gradient(135deg, #E8212A, #FF6B35)', color: 'white', border: 'none', borderRadius: 10, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxShadow: '0 2px 8px rgba(232,33,42,0.3)' }}>
-                        <CheckCircle2 size={14} /> Register
+                        <CheckCircle2 size={14} /> {t('Register')}
                       </motion.button>
-                      <motion.button whileHover={{ scale: 1.04, color: 'white', background: 'var(--accent)' }} whileTap={{ scale: 0.96 }} onClick={() => setInfoFor(campaign)} style={{ padding: '10px 14px', background: 'var(--bg)', color: 'var(--text)', border: '1.5px solid var(--border)', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Campaign details">
+                      <motion.button whileHover={{ scale: 1.04, color: 'white', background: 'var(--accent)' }} whileTap={{ scale: 0.96 }} onClick={() => setInfoFor(campaign)} style={{ padding: '10px 14px', background: 'var(--bg)', color: 'var(--text)', border: '1.5px solid var(--border)', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title={t('Campaign details')}>
                         <Info size={16} />
                       </motion.button>
                     </div>
@@ -388,8 +390,8 @@ const CampaignsPage = ({ embedded = false }) => {
     }
 
       <AnimatePresence>
-        {registerFor && <RegisterModal campaign={registerFor} onClose={() => setRegisterFor(null)} />}
-        {infoFor && <CampaignInfoModal campaign={infoFor} onClose={() => setInfoFor(null)} />}
+        {registerFor && <RegisterModal campaign={registerFor} onClose={() => setRegisterFor(null)} t={t} />}
+        {infoFor && <CampaignInfoModal campaign={infoFor} onClose={() => setInfoFor(null)} t={t} />}
       </AnimatePresence>
     </>;
 

@@ -7,8 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { API_URL } from '../config';
 import toast from 'react-hot-toast';
+import { useLanguage } from '../context/LanguageContext';
 
 const MapPage = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const isLoggedIn = Boolean(localStorage.getItem('token'));
   const [suggestions, setSuggestions] = useState([]);
@@ -52,8 +54,8 @@ const MapPage = () => {
   useEffect(() => {
     axios.get(`${API_URL}/api/suggestions`).
     then((r) => setSuggestions(r.data)).
-    catch(() => toast.error('Could not load map data.'));
-  }, []);
+    catch(() => toast.error(t('Could not load map data.')));
+  }, [t]);
 
   useEffect(() => {
     if (showModal) {
@@ -72,7 +74,7 @@ const MapPage = () => {
 
   const normalizeTags = (value) => {
     return String(value || '')
-    .split(/\s+/)
+    .split(/[\s,]+/)
     .map((tag) => tag.trim())
     .filter(Boolean)
     .map((tag) => tag.startsWith('#') ? tag : `#${tag}`)
@@ -82,15 +84,15 @@ const MapPage = () => {
   };
 
   const handleStartPinning = () => {
-    if (!localStorage.getItem('user')) {toast.error('Please sign in to submit a complaint.');return;}
+    if (!localStorage.getItem('user')) {toast.error(t('Please sign in to submit a complaint.'));return;}
     setPinMode(true);
-    toast('Click on the map to drop a pin.', { icon: '📍' });
+    toast(t('Click on the map to drop a pin.'), { icon: '📍' });
   };
 
   const handleConfirmPin = async (coords) => {
     if (userLoc.loaded && userLoc.coordinates.lat) {
       const dist = calcDistance(userLoc.coordinates.lat, userLoc.coordinates.lng, coords.lat, coords.lng);
-      if (dist > 5) {toast.error(`Pin must be within 5km. Currently ${dist.toFixed(1)}km away.`);return;}
+      if (dist > 5) {toast.error(`${t('Pin must be within 5km. Currently')} ${dist.toFixed(1)}km ${t('away.')}`);return;}
     }
     setTempCoords(coords);
     setValidationPassed(false);
@@ -100,8 +102,8 @@ const MapPage = () => {
     try {
       const r = await axios.get(`https://nominatim.openstreetmap.org/reverse?lat=${coords.lat}&lon=${coords.lng}&format=json`);
       const a = r.data.address;
-      setDetectedArea(a.suburb || a.neighbourhood || a.city_district || a.city || 'Unknown Area');
-    } catch {setDetectedArea('Unknown Area');}
+      setDetectedArea(a.suburb || a.neighbourhood || a.city_district || a.city || t('Unknown Area'));
+    } catch {setDetectedArea(t('Unknown Area'));}
   };
 
   const handleCancel = () => {
@@ -117,9 +119,9 @@ const MapPage = () => {
 
   const handleImageAdd = (e) => {
     const files = Array.from(e.target.files || []);
-    if (images.length + files.length > 3) {toast.error('Maximum 3 images allowed');return;}
+    if (images.length + files.length > 3) {toast.error(t('Maximum 3 images allowed'));return;}
     const validFiles = files.filter((f) => f.size <= 5 * 1024 * 1024);
-    if (validFiles.length < files.length) toast.error('Some files exceeded 5MB limit');
+    if (validFiles.length < files.length) toast.error(t('Some files exceeded 5MB limit'));
     const newImages = [...images, ...validFiles].slice(0, 3);
     setImages(newImages);
     setValidationPassed(false);
@@ -138,13 +140,13 @@ const MapPage = () => {
   };
 
   const handleValidateImages = async () => {
-    if (!tempCoords) {toast.error('Drop a pin first.');return;}
-    if (images.length === 0) {toast.error('Add at least 1 image before validation.');return;}
+    if (!tempCoords) {toast.error(t('Drop a pin first.'));return;}
+    if (images.length === 0) {toast.error(t('Add at least 1 image before validation.'));return;}
     const token = localStorage.getItem('token');
-    if (!token) {toast.error('Please sign in again.');return;}
+    if (!token) {toast.error(t('Please sign in again.'));return;}
 
     setValidating(true);
-    const validatingToast = toast.loading('Validating metadata and comparing image location...');
+    const validatingToast = toast.loading(t('Validating metadata and comparing image location...'));
 
     try {
       const fd = new FormData();
@@ -167,23 +169,23 @@ const MapPage = () => {
       toast.dismiss(validatingToast);
 
       if (missingGpsCount > 0) {
-        toast.error(`Warning: metadata location is empty in ${missingGpsCount} image(s).`);
+        toast.error(`${t('Warning: metadata location is empty in')} ${missingGpsCount} ${t('image(s).')}`);
       }
       if (farCount > 0) {
-        toast.error(`Warning: ${farCount} image(s) are more than 450 metres away from the selected pin.`);
+        toast.error(`${t('Warning:')} ${farCount} ${t('image(s) are more than 450 metres away from the selected pin.')}`);
       }
       if (oldCount > 0) {
-        toast.error(`Warning: ${oldCount} image(s) have time mismatch (image too old).`);
+        toast.error(`${t('Warning:')} ${oldCount} ${t('image(s) have time mismatch (image too old).')}`);
       }
 
       if (r.data?.validated) {
-        toast.success('Validation passed. Submit button is now available.');
+        toast.success(t('Validation passed. Submit button is now available.'));
       } else if (missingGpsCount === 0 && farCount === 0 && oldCount === 0) {
-        toast.error('Validation did not pass. Please re-check images and location.');
+        toast.error(t('Validation did not pass. Please re-check images and location.'));
       }
     } catch (err) {
       toast.dismiss(validatingToast);
-      toast.error(err?.response?.data?.message || 'Validation failed. Please try again.');
+      toast.error(err?.response?.data?.message || t('Validation failed. Please try again.'));
       setValidationPassed(false);
       setValidationResults([]);
     } finally {
@@ -192,14 +194,14 @@ const MapPage = () => {
   };
 
   const handleSubmit = async () => {
-    if (!form.title || !form.description) {toast.error('Please fill in all fields.');return;}
+    if (!form.title || !form.description) {toast.error(t('Please fill in all fields.'));return;}
 
     try {
       const token = localStorage.getItem('token');
 
       if (images.length > 0 && tempCoords) {
         setValidating(true);
-        const comparingToast = toast.loading('Validating metadata and comparing location...');
+        const comparingToast = toast.loading(t('Validating metadata and comparing location...'));
         let validationData;
 
         try {
@@ -259,7 +261,7 @@ const MapPage = () => {
       await axios.post(`${API_URL}/api/suggestions`, fd, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
-      toast.success('Complaint submitted — pending admin review.');
+      toast.success(t('Complaint submitted — pending admin review.'));
       setShowModal(false);setPinMode(false);
       setForm({ title: '', description: '', tags: '', type: 'Suggestion', markerType: 'General' });
       setImages([]);setPreviews([]);
@@ -275,7 +277,7 @@ const MapPage = () => {
       } else if (apiMessage) {
         toast.error(apiMessage);
       } else {
-        toast.error('Failed to submit. Please try again.');
+        toast.error(t('Failed to submit. Please try again.'));
       }
     } finally
     {setSubmitting(false);}
@@ -306,11 +308,11 @@ const MapPage = () => {
         }}>
         {location.pathname === '/' && !isLoggedIn &&
         <div className="home-hero" style={{ position: 'absolute', zIndex: 1000, top: 16, left: 16, right: 16 }}>
-            <h1>Raise Your Voice, Build Better Neighborhoods</h1>
-            <p>Report local issues, support community-led action, and track real outcomes in one civic feed.</p>
+            <h1>{t('Raise Your Voice, Build Better Neighborhoods')}</h1>
+            <p>{t('Report local issues, support community-led action, and track real outcomes in one civic feed.')}</p>
             <div className="hero-actions">
-              <button className="hero-btn-primary" onClick={handleStartPinning}>Sign Up</button>
-              <button className="hero-btn-secondary" onClick={() => navigate('/feed')}>Join the Mission</button>
+              <button className="hero-btn-primary" onClick={handleStartPinning}>{t('Sign Up')}</button>
+              <button className="hero-btn-secondary" onClick={() => navigate('/feed')}>{t('Join the Mission')}</button>
             </div>
           </div>
         }
@@ -327,7 +329,7 @@ const MapPage = () => {
             if (userLoc.loaded && userLoc.coordinates.lat) setManualCenter({ ...userLoc.coordinates, _t: Date.now() });else
             navigator.geolocation?.getCurrentPosition(
               (p) => setManualCenter({ lat: p.coords.latitude, lng: p.coords.longitude, _t: Date.now() }),
-              () => toast.error('Location unavailable.'),
+              () => toast.error(t('Location unavailable.')),
               { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
             );
           }}
@@ -348,7 +350,7 @@ const MapPage = () => {
               borderRadius: 10, boxShadow: '0 4px 16px rgba(239,68,68,0.25)'
             }}>
                 <AlertTriangle size={13} color="white" />
-                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'white' }}>GPS unavailable</span>
+                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'white' }}>{t('GPS unavailable')}</span>
               </div>
             </motion.div>
           }
@@ -361,7 +363,7 @@ const MapPage = () => {
               borderRadius: 10, boxShadow: '0 4px 16px rgba(0,0,0,0.1)'
             }}>
                 <Loader2 size={13} className="spin" style={{ color: '#E8212A' }} />
-                <span style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Locating...</span>
+                <span style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{t('Locating...')}</span>
               </div>
             </motion.div>
           }
@@ -398,7 +400,7 @@ const MapPage = () => {
             letterSpacing: isMobileView ? 0 : '0.01em'
           }}>
           <MapPin size={isMobileView ? 16 : 15} />
-          {!isMobileView && (pinMode ? 'Placing...' : 'Drop Pin')}
+          {!isMobileView && (pinMode ? t('Placing...') : t('Drop Pin'))}
         </motion.button>
       </div>
 
@@ -461,7 +463,7 @@ const MapPage = () => {
                   </div>
                   <div>
                     <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: 'var(--text)' }}>
-                      New Report
+                      {t('New Report')}
                     </h2>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
                       <MapPin size={10} /> {detectedArea}
@@ -489,7 +491,7 @@ const MapPage = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
                     <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Type
+                      {t('Type')}
                     </label>
                     <div style={{ display: 'flex', gap: 6 }}>
                       {['Complaint', 'Suggestion'].map((type) =>
@@ -503,14 +505,14 @@ const MapPage = () => {
                         color: form.type === type ? 'var(--accent)' : 'var(--text-secondary)',
                         fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer', transition: 'all 0.15s ease'
                       }}>
-                          {type}
+                          {t(type)}
                         </button>
                     )}
                     </div>
                   </div>
                   <div>
                     <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Category
+                      {t('Category')}
                     </label>
                     <select
                     value={form.markerType}
@@ -531,11 +533,11 @@ const MapPage = () => {
                 {}
                 <div>
                   <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Title
+                    {t('Title')}
                   </label>
                   <input
                   type="text"
-                  placeholder="Brief, clear title..."
+                  placeholder={t('Brief, clear title...')}
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                   maxLength={100}
@@ -556,11 +558,11 @@ const MapPage = () => {
                 {}
                 <div>
                   <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Description
+                    {t('Description')}
                   </label>
                   <textarea
                   rows={3}
-                  placeholder="Describe the issue in detail..."
+                  placeholder={t('Describe the issue in detail...')}
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   maxLength={500}
@@ -581,7 +583,7 @@ const MapPage = () => {
 
                 <div>
                   <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Tags
+                    {t('Tags')}
                   </label>
                   <input
                   type="text"
@@ -595,14 +597,14 @@ const MapPage = () => {
                     outline: 'none', transition: 'all 0.2s ease', boxSizing: 'border-box'
                   }} />
                   <p style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', margin: '6px 0 0' }}>
-                    Add up to 8 hashtags separated by space.
+                    {t('Add up to 8 hashtags separated by space.')}
                   </p>
                 </div>
 
                 {}
                 <div>
                   <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Photos <span style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>({images.length}/3)</span>
+                    {t('Photos')} <span style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>({images.length}/3)</span>
                   </label>
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     {previews.map((src, i) =>
@@ -634,7 +636,7 @@ const MapPage = () => {
                       color: 'var(--text-tertiary)', transition: 'all 0.2s ease'
                     }}>
                         <ImagePlus size={18} />
-                        <span style={{ fontSize: '0.6rem', fontWeight: 600 }}>Add</span>
+                        <span style={{ fontSize: '0.6rem', fontWeight: 600 }}>{t('Add')}</span>
                       </motion.button>
                   }
                   </div>
@@ -647,7 +649,7 @@ const MapPage = () => {
                   style={{ display: 'none' }} />
                 
                   <p style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', margin: '6px 0 0' }}>
-                    JPG, PNG, WebP · Max 5MB each
+                    {t('JPG, PNG, WebP · Max 5MB each')}
                   </p>
                 </div>
 
@@ -659,7 +661,7 @@ const MapPage = () => {
                   background: 'var(--surface-alt)'
                 }}>
                     <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', margin: '0 0 8px' }}>
-                      Metadata Validation Results
+                      {t('Metadata Validation Results')}
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {validationResults.map((img, i) => {
@@ -667,10 +669,10 @@ const MapPage = () => {
                     const statusColor = !img.hasGPS || !img.isLocationMatch || img.isTimestampRecent === false ? '#ef4444' : '#10b981';
                     return (
                       <div key={`vr-${i}`} style={{ fontSize: '0.74rem', color: statusColor }}>
-                            {!img.hasGPS && `Image ${i + 1}: Warning - metadata location is empty.`}
-                            {img.hasGPS && !img.isLocationMatch && `Image ${i + 1}: Warning - ${metres}m away (more than 450m).`}
-                            {img.hasTimestamp && img.isTimestampRecent === false && `Image ${i + 1}: Warning - time mismatch, image too old${img.ageDays != null ? ` (${img.ageDays} days)` : ''}.`}
-                            {img.hasGPS && img.isLocationMatch && (!img.hasTimestamp || img.isTimestampRecent) && `Image ${i + 1}: OK - ${metres}m away (within 450m).`}
+                            {!img.hasGPS && `${t('Image')} ${i + 1}: ${t('Warning - metadata location is empty.')}`}
+                            {img.hasGPS && !img.isLocationMatch && `${t('Image')} ${i + 1}: ${t('Warning -')} ${metres}m ${t('away (more than 450m).')}`}
+                            {img.hasTimestamp && img.isTimestampRecent === false && `${t('Image')} ${i + 1}: ${t('Warning - time mismatch, image too old')}${img.ageDays != null ? ` (${img.ageDays} ${t('days')})` : ''}.`}
+                            {img.hasGPS && img.isLocationMatch && (!img.hasTimestamp || img.isTimestampRecent) && `${t('Image')} ${i + 1}: ${t('OK -')} ${metres}m ${t('away (within 450m).')}`}
                           </div>
                     );
                   })}
@@ -694,7 +696,7 @@ const MapPage = () => {
                   color: 'var(--text)', fontWeight: 600, fontSize: '0.88rem',
                   cursor: 'pointer'
                 }}>
-                  Cancel
+                  {t('Cancel')}
                 </motion.button>
 
                 <motion.button
@@ -710,7 +712,7 @@ const MapPage = () => {
                   cursor: validating || images.length === 0 || !tempCoords ? 'not-allowed' : 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
                 }}>
-                  {validating ? <><Loader2 size={14} className="spin" /> Validating...</> : <>Validate Metadata</>}
+                  {validating ? <><Loader2 size={14} className="spin" /> {t('Validating...')}</> : <>{t('Validate Metadata')}</>}
                 </motion.button>
 
                 <motion.button
@@ -732,9 +734,9 @@ const MapPage = () => {
                   '0 2px 10px rgba(232,33,42,0.3)'
                 }}>
                   {submitting || validating ?
-                <><Loader2 size={14} className="spin" /> {validating ? 'Comparing...' : 'Submitting...'}</> :
+                <><Loader2 size={14} className="spin" /> {validating ? t('Comparing...') : t('Submitting...')}</> :
 
-                <><selectedMarker.icon size={14} /> Submit</>
+                <><selectedMarker.icon size={14} /> {t('Submit')}</>
                 }
                 </motion.button>
               </div>
@@ -753,8 +755,8 @@ const MapPage = () => {
         display: 'flex',
         gap: 8
       }}>
-          <button className="hero-btn-primary" style={{ flex: 1 }} onClick={handleStartPinning}>Sign Up</button>
-          <button className="hero-btn-secondary" style={{ flex: 1 }} onClick={() => navigate('/feed')}>Join the Mission</button>
+          <button className="hero-btn-primary" style={{ flex: 1 }} onClick={handleStartPinning}>{t('Sign Up')}</button>
+          <button className="hero-btn-secondary" style={{ flex: 1 }} onClick={() => navigate('/feed')}>{t('Join the Mission')}</button>
         </div>
       }
     </motion.div>);
