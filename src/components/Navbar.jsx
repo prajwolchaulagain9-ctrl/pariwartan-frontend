@@ -404,18 +404,27 @@ const Navbar = () => {
           flex: isMobileView ? '1 1 auto' : '1 1 0',
           paddingLeft: isMobileView ? 0 : 10
         }}>
-          <img
-            className="nav-logo"
-            src="/logo.png"
-            alt="Pariwartan"
-            style={{
-              height: isMobileView ? 36 : 42,
-              width: 'auto',
-              maxWidth: isMobileView ? 'calc(100vw - 120px)' : '100%',
-              objectFit: 'contain',
-              display: 'block'
-            }}
-            onError={(e) => {e.currentTarget.style.display = 'none';}} />
+          <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: isMobileView ? 6 : 10 }}>
+            <img
+              className="nav-logo"
+              src="/logo.png"
+              alt="Pariwartan"
+              style={{
+                height: isMobileView ? 36 : 42,
+                width: 'auto',
+                maxWidth: isMobileView ? 'calc(100vw - 140px)' : '100%',
+                objectFit: 'contain',
+                display: 'block'
+              }}
+              onError={(e) => {e.currentTarget.style.display = 'none';}} />
+            <img
+              className="nav-logo-mark"
+              src="/assets/logo.png"
+              alt="Genz Reports"
+              style={{ height: isMobileView ? 28 : 32, width: 'auto', display: 'block' }}
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+          </NavLink>
 
           <div className="desktop-nav-links" style={{
             display: isMobileView ? 'none' : 'flex',
