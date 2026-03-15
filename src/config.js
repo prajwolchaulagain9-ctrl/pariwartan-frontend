@@ -1,7 +1,7 @@
 
 
-const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-export const API_URL = rawApiUrl.replace(/\/+$/, '');
+const rawApiUrl = import.meta.env.VITE_API_URL || 'https://pariwartan-backend-0d20439ff078.herokuapp.com';
+export const API_URL = String(rawApiUrl).trim().replace(/\/+$/, '');
 
 
 export const getImgUrl = (img) => {

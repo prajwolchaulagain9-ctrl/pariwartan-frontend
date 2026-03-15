@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronUp, MessageSquare, MapPin, X, Send, Search, Filter, ArrowUpRight, Clock, User, CheckCircle, Image, Megaphone, Maximize2, Minimize2, Flag, Map } from 'lucide-react';
+import { ChevronUp, MessageSquare, MapPin, X, Send, Search, Filter, ArrowUpRight, Clock, User, CheckCircle, Image, Megaphone, Maximize2, Minimize2, Flag, Map, Bot } from 'lucide-react';
 import axios from 'axios';
 import { API_URL, getImgUrl, getImgFallbackUrl } from '../config';
 import toast from 'react-hot-toast';
@@ -45,6 +45,7 @@ const FeedPage = ({ myOwn = false }) => {
   const [lightbox, setLightbox] = useState(null);
   const [subTab, setSubTab] = useState('feed');
   const [viewMode, setViewMode] = useState('compact');
+  const [aiSolutionModal, setAiSolutionModal] = useState({ visible: false, suggestion: null });
   const bottomRef = useRef(null);
 
   const handleImgError = (e, rawUrl) => {
@@ -352,6 +353,23 @@ const FeedPage = ({ myOwn = false }) => {
                           {s.status === 'Progress' ? 'Approved' : s.status}
                         </span>
                       </div>
+                      <motion.button
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => setAiSolutionModal({ visible: true, suggestion: s })}
+                        style={{
+                          marginLeft: 'auto',
+                          display: 'flex', alignItems: 'center', gap: 6,
+                          padding: '6px 10px', borderRadius: 8,
+                          border: '1px solid var(--border)',
+                          background: 'var(--surface-alt)',
+                          color: 'var(--text-secondary)',
+                          fontSize: '0.72rem', fontWeight: 700,
+                          cursor: 'pointer'
+                        }}>
+                        <Bot size={13} />
+                        AI
+                      </motion.button>
                     </div>
 
                     {}
@@ -755,6 +773,69 @@ const FeedPage = ({ myOwn = false }) => {
             </motion.div>
           </motion.div>
         }
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {aiSolutionModal.visible && (
+          <div
+            className="modal-overlay"
+            style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', zIndex: 3000 }}
+            onClick={(e) => { if (e.target === e.currentTarget) setAiSolutionModal({ visible: false, suggestion: null }); }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              style={{
+                background: 'var(--bg)',
+                padding: 24,
+                borderRadius: 16,
+                width: '92%',
+                maxWidth: 560,
+                boxShadow: 'var(--shadow-xl)',
+                border: '1px solid var(--border)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <h2 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Bot size={18} /> AI Solution
+                </h2>
+                <button
+                  onClick={() => setAiSolutionModal({ visible: false, suggestion: null })}
+                  style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 6, background: 'var(--surface-alt)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              <p style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                {aiSolutionModal.suggestion?.aiSolution?.summary || 'AI solution is not available for this report yet.'}
+              </p>
+
+              {Array.isArray(aiSolutionModal.suggestion?.aiSolution?.actions) && aiSolutionModal.suggestion.aiSolution.actions.length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Action Plan
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 8 }}>
+                    {aiSolutionModal.suggestion.aiSolution.actions.slice(0, 3).map((item, idx) => (
+                      <li key={idx} style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div style={{ marginTop: 16, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-light)', border: '1px solid var(--accent-border)', borderRadius: 999, padding: '5px 10px' }}>
+                  Severity: {aiSolutionModal.suggestion?.aiSolution?.severity || 3}/5
+                </span>
+                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--surface-alt)', border: '1px solid var(--border)', borderRadius: 999, padding: '5px 10px' }}>
+                  Category: {aiSolutionModal.suggestion?.aiSolution?.category || 'Other'}
+                </span>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
 
       <AnimatePresence>

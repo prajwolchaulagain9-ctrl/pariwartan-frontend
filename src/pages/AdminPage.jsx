@@ -903,6 +903,30 @@ const AdminPage = () => {
                     )}
                         </div>
                   }
+
+                      {Array.isArray(s.imageVerification) && s.imageVerification.length > 0 &&
+                  <div style={{ marginTop: 10, padding: 10, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-alt)' }}>
+                          <p style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text)', margin: '0 0 8px' }}>
+                            Metadata Review
+                          </p>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {s.imageVerification.map((iv, i) => {
+                        const metres = iv.distanceFromComplaint != null ? Math.round(iv.distanceFromComplaint * 1000) : null;
+                        const issues = [];
+                        if (!iv.hasGPS) issues.push('No image location metadata');
+                        if (iv.hasGPS && iv.isLocationMatch === false) issues.push(`450m+ away from pinned location${metres != null ? ` (${metres}m)` : ''}`);
+                        if (!iv.hasTimestamp) issues.push('No image timestamp metadata');
+                        if (iv.hasTimestamp && iv.isTimestampRecent === false) issues.push(`Time mismatch (too old${iv.ageDays != null ? `, ${iv.ageDays} days` : ''})`);
+
+                        return (
+                          <div key={`iv-${i}`} style={{ fontSize: '0.76rem', color: issues.length ? '#b91c1c' : '#065f46' }}>
+                                {issues.length ? `Image ${i + 1}: ${issues.join(' | ')}` : `Image ${i + 1}: Metadata OK`}
+                              </div>
+                        );
+                      })}
+                          </div>
+                        </div>
+                  }
                     </div>
                     <div className="issue-actions" style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 120 }}>
                       {s.status === 'Pending' &&

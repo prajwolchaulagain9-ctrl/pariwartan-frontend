@@ -17,6 +17,9 @@ const MapPage = () => {
   const [detectedArea, setDetectedArea] = useState('Detecting...');
   const [form, setForm] = useState({ title: '', description: '', type: 'Suggestion', markerType: 'General' });
   const [submitting, setSubmitting] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [validationPassed, setValidationPassed] = useState(false);
+  const [validationResults, setValidationResults] = useState([]);
   const [images, setImages] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [isMobileView, setIsMobileView] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
@@ -77,6 +80,8 @@ const MapPage = () => {
       if (dist > 5) {toast.error(`Pin must be within 5km. Currently ${dist.toFixed(1)}km away.`);return;}
     }
     setTempCoords(coords);
+    setValidationPassed(false);
+    setValidationResults([]);
     setShowModal(true);
     setDetectedArea('Detecting...');
     try {
@@ -93,6 +98,8 @@ const MapPage = () => {
     setForm({ title: '', description: '', type: 'Suggestion', markerType: 'General' });
     setImages([]);
     setPreviews([]);
+    setValidationPassed(false);
+    setValidationResults([]);
   };
 
   const handleImageAdd = (e) => {
@@ -102,6 +109,8 @@ const MapPage = () => {
     if (validFiles.length < files.length) toast.error('Some files exceeded 5MB limit');
     const newImages = [...images, ...validFiles].slice(0, 3);
     setImages(newImages);
+    setValidationPassed(false);
+    setValidationResults([]);
     const newPreviews = newImages.map((f) => URL.createObjectURL(f));
     setPreviews((prev) => {prev.forEach((u) => URL.revokeObjectURL(u));return newPreviews;});
     if (fileRef.current) fileRef.current.value = '';
@@ -111,14 +120,117 @@ const MapPage = () => {
     URL.revokeObjectURL(previews[idx]);
     setImages((prev) => prev.filter((_, i) => i !== idx));
     setPreviews((prev) => prev.filter((_, i) => i !== idx));
+    setValidationPassed(false);
+    setValidationResults([]);
+  };
+
+  const handleValidateImages = async () => {
+    if (!tempCoords) {toast.error('Drop a pin first.');return;}
+    if (images.length === 0) {toast.error('Add at least 1 image before validation.');return;}
+    const token = localStorage.getItem('token');
+    if (!token) {toast.error('Please sign in again.');return;}
+
+    setValidating(true);
+    const validatingToast = toast.loading('Validating metadata and comparing image location...');
+
+    try {
+      const fd = new FormData();
+      fd.append('lat', tempCoords.lat);
+      fd.append('lng', tempCoords.lng);
+      images.forEach((f) => fd.append('images', f));
+
+      const r = await axios.post(`${API_URL}/api/validate-images`, fd, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+      });
+
+      const resultImages = r.data?.images || [];
+      setValidationResults(resultImages);
+      setValidationPassed(Boolean(r.data?.validated));
+
+      const missingGpsCount = resultImages.filter((img) => !img.hasGPS).length;
+      const farCount = resultImages.filter((img) => img.hasGPS && !img.isLocationMatch).length;
+      const oldCount = resultImages.filter((img) => img.hasTimestamp && img.isTimestampRecent === false).length;
+
+      toast.dismiss(validatingToast);
+
+      if (missingGpsCount > 0) {
+        toast.error(`Warning: metadata location is empty in ${missingGpsCount} image(s).`);
+      }
+      if (farCount > 0) {
+        toast.error(`Warning: ${farCount} image(s) are more than 450 metres away from the selected pin.`);
+      }
+      if (oldCount > 0) {
+        toast.error(`Warning: ${oldCount} image(s) have time mismatch (image too old).`);
+      }
+
+      if (r.data?.validated) {
+        toast.success('Validation passed. Submit button is now available.');
+      } else if (missingGpsCount === 0 && farCount === 0 && oldCount === 0) {
+        toast.error('Validation did not pass. Please re-check images and location.');
+      }
+    } catch (err) {
+      toast.dismiss(validatingToast);
+      toast.error(err?.response?.data?.message || 'Validation failed. Please try again.');
+      setValidationPassed(false);
+      setValidationResults([]);
+    } finally {
+      setValidating(false);
+    }
   };
 
   const handleSubmit = async () => {
     if (!form.title || !form.description) {toast.error('Please fill in all fields.');return;}
-    setSubmitting(true);
+
     try {
-      const user = JSON.parse(localStorage.getItem('user'));
       const token = localStorage.getItem('token');
+
+      if (images.length > 0 && tempCoords) {
+        setValidating(true);
+        const comparingToast = toast.loading('Validating metadata and comparing location...');
+        let validationData;
+
+        try {
+          const validateFd = new FormData();
+          validateFd.append('lat', tempCoords.lat);
+          validateFd.append('lng', tempCoords.lng);
+          images.forEach((f) => validateFd.append('images', f));
+
+          const vr = await axios.post(`${API_URL}/api/validate-images`, validateFd, {
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+          });
+          validationData = vr.data || {};
+          setValidationResults(validationData.images || []);
+          setValidationPassed(Boolean(validationData.validated));
+        } finally {
+          toast.dismiss(comparingToast);
+          setValidating(false);
+        }
+
+        const warningLines = [];
+        (validationData?.images || []).forEach((img, idx) => {
+          const label = `Image ${idx + 1}`;
+          if (!img.hasGPS) warningLines.push(`${label}: location metadata does not exist.`);
+          if (img.hasGPS && img.isLocationMatch === false) {
+            const metres = img.distanceFromComplaint != null ? Math.round(img.distanceFromComplaint * 1000) : null;
+            warningLines.push(`${label}: location is very far from your pinned location (${metres != null ? `${metres}m` : 'more than 450m'} away).`);
+          }
+          if (img.hasTimestamp && img.isTimestampRecent === false) {
+            warningLines.push(`${label}: time mismatch, image is too old${img.ageDays != null ? ` (${img.ageDays} days old)` : ''}.`);
+          }
+        });
+
+        if (warningLines.length > 0) {
+          const proceed = window.confirm([
+          'Metadata comparison found warnings:',
+          ...warningLines.map((line) => `- ${line}`),
+          '',
+          'Do you want to continue submission anyway?'].join('\n'));
+          if (!proceed) return;
+        }
+      }
+
+      setSubmitting(true);
+
       const fd = new FormData();
       fd.append('title', form.title);
       fd.append('description', form.description);
@@ -136,6 +248,8 @@ const MapPage = () => {
       setShowModal(false);setPinMode(false);
       setForm({ title: '', description: '', type: 'Suggestion', markerType: 'General' });
       setImages([]);setPreviews([]);
+      setValidationPassed(false);
+      setValidationResults([]);
       const r = await axios.get(`${API_URL}/api/suggestions`);
       setSuggestions(r.data);
     } catch {toast.error('Failed to submit. Please try again.');} finally
@@ -480,6 +594,33 @@ const MapPage = () => {
                     JPG, PNG, WebP · Max 5MB each
                   </p>
                 </div>
+
+                {validationResults.length > 0 &&
+                <div style={{
+                  border: '1.5px solid var(--border)',
+                  borderRadius: 10,
+                  padding: 10,
+                  background: 'var(--surface-alt)'
+                }}>
+                    <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', margin: '0 0 8px' }}>
+                      Metadata Validation Results
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {validationResults.map((img, i) => {
+                    const metres = img.distanceFromComplaint != null ? Math.round(img.distanceFromComplaint * 1000) : null;
+                    const statusColor = !img.hasGPS || !img.isLocationMatch || img.isTimestampRecent === false ? '#ef4444' : '#10b981';
+                    return (
+                      <div key={`vr-${i}`} style={{ fontSize: '0.74rem', color: statusColor }}>
+                            {!img.hasGPS && `Image ${i + 1}: Warning - metadata location is empty.`}
+                            {img.hasGPS && !img.isLocationMatch && `Image ${i + 1}: Warning - ${metres}m away (more than 450m).`}
+                            {img.hasTimestamp && img.isTimestampRecent === false && `Image ${i + 1}: Warning - time mismatch, image too old${img.ageDays != null ? ` (${img.ageDays} days)` : ''}.`}
+                            {img.hasGPS && img.isLocationMatch && (!img.hasTimestamp || img.isTimestampRecent) && `Image ${i + 1}: OK - ${metres}m away (within 450m).`}
+                          </div>
+                    );
+                  })}
+                    </div>
+                  </div>
+                }
               </div>
 
               {}
@@ -499,26 +640,43 @@ const MapPage = () => {
                 }}>
                   Cancel
                 </motion.button>
+
                 <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                disabled={submitting || !form.title || !form.description}
+                disabled={validating || images.length === 0 || !tempCoords}
+                onClick={handleValidateImages}
+                style={{
+                  flex: 1, padding: '10px 14px', borderRadius: 10,
+                  border: '1.5px solid var(--border)',
+                  background: validating || images.length === 0 || !tempCoords ? 'var(--surface-alt)' : 'var(--bg)',
+                  color: 'var(--text)', fontWeight: 600, fontSize: '0.82rem',
+                  cursor: validating || images.length === 0 || !tempCoords ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+                }}>
+                  {validating ? <><Loader2 size={14} className="spin" /> Validating...</> : <>Validate Metadata</>}
+                </motion.button>
+
+                <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                disabled={submitting || validating || !form.title || !form.description}
                 onClick={handleSubmit}
                 style={{
                   flex: 1, padding: '10px 14px', borderRadius: 10,
                   border: 'none',
-                  background: submitting || !form.title || !form.description ?
+                  background: submitting || validating || !form.title || !form.description ?
                   'rgba(124,58,237,0.3)' :
                   'linear-gradient(135deg, #7c3aed, #a78bfa)',
                   color: 'white', fontWeight: 600, fontSize: '0.88rem',
-                  cursor: submitting || !form.title || !form.description ? 'not-allowed' : 'pointer',
+                  cursor: submitting || validating || !form.title || !form.description ? 'not-allowed' : 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  boxShadow: submitting || !form.title || !form.description ?
+                  boxShadow: submitting || validating || !form.title || !form.description ?
                   'none' :
                   '0 2px 10px rgba(124,58,237,0.3)'
                 }}>
-                  {submitting ?
-                <><Loader2 size={14} className="spin" /> Submitting...</> :
+                  {submitting || validating ?
+                <><Loader2 size={14} className="spin" /> {validating ? 'Comparing...' : 'Submitting...'}</> :
 
                 <><selectedMarker.icon size={14} /> Submit</>
                 }
