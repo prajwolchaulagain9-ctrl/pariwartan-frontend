@@ -252,7 +252,17 @@ const MapPage = () => {
       setValidationResults([]);
       const r = await axios.get(`${API_URL}/api/suggestions`);
       setSuggestions(r.data);
-    } catch {toast.error('Failed to submit. Please try again.');} finally
+    } catch (err) {
+      const apiMessage = err?.response?.data?.message;
+      const moderationDeleted = err?.response?.data?.deleted;
+      if (moderationDeleted && apiMessage) {
+        toast.error(apiMessage);
+      } else if (apiMessage) {
+        toast.error(apiMessage);
+      } else {
+        toast.error('Failed to submit. Please try again.');
+      }
+    } finally
     {setSubmitting(false);}
   };
 
